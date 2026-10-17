@@ -31,4 +31,20 @@ class Producto {
 
   /// Sin precio = sin disponibilidad.
   bool get disponible => precio != null;
+
+  /// Instantánea que no comparte colecciones mutables con el origen.
+  Producto copiaInmutable() => Producto(
+    nombre: nombre,
+    subtitulo: subtitulo,
+    categoria: categoria,
+    colores: List.unmodifiable(colores),
+    entrega: entrega,
+    tipo: tipo,
+    precio: precio,
+    precioAntes: precioAntes,
+    top: top,
+    nuevo: nuevo,
+    logo: logo,
+    banner: banner,
+  );
 }

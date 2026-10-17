@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../models/producto.dart';
+import '../repositories/catalogo_repository.dart';
 
-/// Punto único de acceso a los productos. Hoy devuelve datos de ejemplo;
-/// cuando exista el backend Laravel, solo hay que reemplazar el cuerpo
-/// de [obtenerProductos] por la petición HTTP.
-class ProductoService {
+/// Repositorio de demostración. Una implementación remota podrá sustituirlo
+/// mediante el contrato [CatalogoRepository], sin modificar sus consumidores.
+class ProductoService implements CatalogoRepository {
+  @override
   Future<List<Producto>> obtenerProductos() async {
     return _datosDemo;
   }

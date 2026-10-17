@@ -5,10 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/app_theme.dart';
 import '../core/acceso_compra.dart';
 import '../core/busqueda_producto.dart';
+import '../core/http/error_api.dart';
 import '../models/categoria.dart';
 import '../models/producto.dart';
 import '../providers/carrito_provider.dart';
-import '../services/producto_service.dart';
+import '../providers/catalogo_provider.dart';
 import '../services/sesion_service.dart';
 import '../widgets/cabecera_tienda.dart';
 import '../widgets/categorias_chips.dart';
@@ -30,9 +31,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _servicio = ProductoService();
-  late final Future<List<Producto>> _productos = _servicio.obtenerProductos();
-
   // Notifier para redibujar solo los chips, sin reconstruir las páginas.
   final _categoria = ValueNotifier<int>(0);
 
@@ -115,26 +113,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  List<Producto> _productosDe(Categoria seccion, List<Producto> todos) {
-    return switch (seccion.nombre) {
-      'Ofertas del día' =>
-        todos
-            .where(
-              (p) =>
-                  p.precio != null &&
-                  p.precioAntes != null &&
-                  p.precioAntes! > p.precio!,
-            )
-            .toList(growable: false),
-      'Más vendidos' => todos.where((p) => p.top).toList(growable: false),
-      'Novedades' => todos.where((p) => p.nuevo).toList(growable: false),
-      _ =>
-        todos
-            .where((p) => p.categoria == seccion.nombre)
-            .toList(growable: false),
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final ancho = MediaQuery.sizeOf(context).width;
@@ -144,20 +122,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return PantallaBase(
       maxAncho: double.infinity,
       floatingActionButton: const SoporteFlotante(),
-      child: FutureBuilder<List<Producto>>(
-        future: _productos,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text('No se pudieron cargar los productos'),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          return _contenido(snapshot.data!, compacto, margen, ancho);
-        },
-      ),
+      child: ref
+          .watch(catalogoProvider)
+          .when(
+            skipLoadingOnRefresh: false,
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stackTrace) => Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('No se pudieron cargar los productos'),
+                  if (error is ErrorApi)
+                    Text(error.mensaje, textAlign: TextAlign.center),
+                  TextButton(
+                    onPressed: () => ref.invalidate(catalogoProvider),
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            ),
+            data: (productos) => _contenido(productos, compacto, margen, ancho),
+          ),
     );
   }
 
@@ -167,6 +152,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     double margen,
     double ancho,
   ) {
+    final secciones = ref.watch(seccionesCatalogoProvider).requireValue;
+    final categorias = ref.watch(categoriasCatalogoProvider).requireValue;
     return Column(
       children: [
         CabeceraTienda(
@@ -207,25 +194,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               itemBuilder: (_, i) => RepaintBoundary(
                 child: i == 0
                     ? CatalogoInicio(
-                        ofertas: _productosDe(
-                          Categoria.ofertas,
-                          todos,
-                        ).take(6).toList(),
-                        masVendidos: _productosDe(
-                          Categoria.masVendidos,
-                          todos,
-                        ).take(6).toList(),
-                        novedades: _productosDe(
-                          Categoria.novedades,
-                          todos,
-                        ).take(6).toList(),
-                        productosPorCategoria: {
-                          for (final categoria in Categoria.catalogo)
-                            if (todos.any(
-                              (p) => p.categoria == categoria.nombre,
-                            ))
-                              categoria: _productosDe(categoria, todos),
-                        },
+                        ofertas: List.unmodifiable(
+                          secciones[Categoria.ofertas]!.take(6),
+                        ),
+                        masVendidos: List.unmodifiable(
+                          secciones[Categoria.masVendidos]!.take(6),
+                        ),
+                        novedades: List.unmodifiable(
+                          secciones[Categoria.novedades]!.take(6),
+                        ),
+                        productosPorCategoria: categorias,
                         compacto: compacto,
                         margen: margen,
                         ancho: ancho,
@@ -241,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       )
                     : CatalogoCategoria(
                         categoria: Categoria.lista[i],
-                        productos: _productosDe(Categoria.lista[i], todos),
+                        productos: secciones[Categoria.lista[i]]!,
                         margen: margen,
                         ancho: ancho,
                         onComprar: _comprar,

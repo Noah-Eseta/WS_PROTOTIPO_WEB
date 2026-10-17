@@ -84,3 +84,61 @@ de comparación conserva y registra los errores de ambas versiones en móvil.
 El overflow de 6 px de `MasVendido` sigue provocando el fallo conocido de
 `home_alignment_test.dart`. La adaptación de esa prueba a `ProviderScope` conserva
 sus selectores y todas sus verificaciones geométricas; no ignora excepciones.
+
+## Comprobaciones durante la migración del catálogo
+
+Se comparó Home antes y después de sustituir la carga local por Riverpod en
+360 × 800, 390 × 844, 600 × 960, 768 × 1024, 1024 × 768 y 1440 × 900.
+Las 12 vistas inspeccionadas por resolución coinciden en posiciones, dimensiones,
+textos, estilos, imágenes y disponibilidad de callbacks. El recorrido incluye
+portada, soporte abierto y cerrado, novedades, beneficios y las siete secciones
+de categorías y especiales. Son widget tests; no una validación en dispositivos
+Android ni en un navegador real.
+
+Los errores anteriores y posteriores también coinciden: 21 px en las promociones
+a 600 px, 2 px a 768 px y 6 px en más vendidos a 1440 px. El diagnóstico compara
+los errores de ambas versiones y conserva su informe en
+`.dart_tool/catalogo_audit/report.json`, ignorado por Git. No se han modificado
+las pruebas existentes ni su tratamiento de errores.
+
+Validación de esta migración: `flutter analyze` sin incidencias; `flutter test`
+con 72 pruebas aprobadas y el único fallo conocido de `home_alignment_test.dart`
+por los dos desbordamientos de 6 px. Las 16 pruebas nuevas de datos, providers e
+integración pasan, incluido el flujo de búsqueda, detalle, carrito, contador,
+pago y confirmación con el catálogo demo. Las seis comparaciones de resoluciones
+se ejecutan por separado como diagnóstico local.
+
+## Comprobaciones durante la integración HTTP con Railway
+
+Se conserva el catálogo local como origen predeterminado. El modo API requiere
+`--dart-define=CATALOGO_ORIGEN=api`; no mezcla productos locales ni los usa como
+fallback. Los 34 productos de la respuesta real coinciden con el mock en todos
+sus atributos, precios y orden; se conservan los 11 productos sin disponibilidad.
+
+La comparación entre Home anterior con mock y Home actual con una respuesta HTTP
+de prueba coincide en 360 × 800, 390 × 844, 600 × 960, 768 × 1024, 1024 × 768 y
+1440 × 900. Se comparan las mismas 12 vistas por resolución, incluyendo geometría,
+estilos, imágenes, callbacks y errores. Persisten los 21 px de las promociones a
+600 px, los 2 px a 768 px y los 6 px de más vendidos a 1440 px. Los diagnósticos
+están en `.dart_tool/http_catalogo_audit/`, ignorado por Git. Las pruebas permanentes
+conservan su tratamiento de errores y sus verificaciones originales.
+
+La compilación Web release con `--base-href /WS_PROTOTIPO_WEB/` y modo API funciona
+en Brave headless con perfil aislado y sin desactivar CORS ni seguridad. Se comprobó
+la petición HTTPS real (HTTP 200, 34 productos y 11 no disponibles), el renderizado
+con assets locales, el estado de error al bloquear la petición y la recuperación
+mediante «Reintentar» con otra respuesta HTTP 200. No hubo excepciones JavaScript.
+Las capturas y el informe se conservan localmente en el directorio del diagnóstico.
+
+La única ampliación visual corresponde al estado de error: mensaje del fallo
+y acción «Reintentar». El catálogo cargado mantiene los componentes existentes.
+
+Validación: 68 pruebas nuevas aprobadas; suite completa con 140 aprobadas y el
+único fallo conocido de `home_alignment_test.dart` por los dos overflows de 6 px.
+`flutter analyze` y `git diff --check` sin errores. Se verifican la compra simulada,
+el contador y la conservación de productos y cantidades al recargar el catálogo.
+
+Se generó el APK de depuración con modo API y permiso de Internet. No había
+dispositivos ni emuladores Android conectados, por lo que queda pendiente la
+comprobación de ejecución y conexión HTTPS en un dispositivo Android real.
+No se modificaron el backend, Railway ni los archivos de publicación de GitHub Pages.
