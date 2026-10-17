@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/app_theme.dart';
 import '../core/acceso_compra.dart';
 import '../core/formato.dart';
 import '../models/item_carrito.dart';
-import '../services/carrito_service.dart';
+import '../providers/carrito_provider.dart';
+import '../models/estado_carrito.dart';
 import '../widgets/imagen_producto.dart';
 import '../widgets/logo_marca.dart';
 import '../widgets/pantalla_base.dart';
@@ -15,16 +17,14 @@ import 'pago_screen.dart';
 const _fondoPanel = Color(0xFF080C12);
 const _rojo = Color(0xFFEF4444);
 
-class CarritoScreen extends StatefulWidget {
+class CarritoScreen extends ConsumerStatefulWidget {
   const CarritoScreen({super.key});
 
   @override
-  State<CarritoScreen> createState() => _CarritoScreenState();
+  ConsumerState<CarritoScreen> createState() => _CarritoScreenState();
 }
 
-class _CarritoScreenState extends State<CarritoScreen> {
-  final _carrito = CarritoService.instancia;
-
+class _CarritoScreenState extends ConsumerState<CarritoScreen> {
   void _aviso(String texto) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -33,95 +33,107 @@ class _CarritoScreenState extends State<CarritoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final carrito = ref.watch(carritoProvider);
+    final acciones = ref.read(carritoProvider.notifier);
     final ancho = MediaQuery.sizeOf(context).width;
     final ancha = ancho >= 900;
     final margen = ancho < 600 ? 16.0 : 32.0;
 
     return PantallaBase(
       maxAncho: double.infinity,
-      child: ListenableBuilder(
-        listenable: _carrito,
-        builder: (context, _) => Column(
-          children: [
-            _Cabecera(margen: margen, total: _carrito.total),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(margen, 20, margen, 32),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: double.infinity,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'TU COMPRA',
-                                style: TextStyle(
-                                  color: AppColors.acento,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1,
-                                ),
+      child: Column(
+        children: [
+          _Cabecera(margen: margen, total: carrito.total),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(margen, 20, margen, 32),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: double.infinity,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'TU COMPRA',
+                              style: TextStyle(
+                                color: AppColors.acento,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1,
                               ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                'Revisa tus productos antes de continuar con el pago.',
-                                style: TextStyle(
-                                  color: AppColors.textoSecundario,
-                                  fontSize: 13,
-                                ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Revisa tus productos antes de continuar con el pago.',
+                              style: TextStyle(
+                                color: AppColors.textoSecundario,
+                                fontSize: 13,
                               ),
-                              const SizedBox(height: 22),
-                              if (_carrito.vacio)
-                                const _Vacio()
-                              else if (ancha)
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(child: _Tabla(carrito: _carrito)),
-                                    const SizedBox(width: 20),
-                                    SizedBox(
-                                      width: 400,
-                                      child: _Resumen(
-                                        carrito: _carrito,
-                                        onAviso: _aviso,
-                                        onContinuar: _continuar,
-                                      ),
+                            ),
+                            const SizedBox(height: 22),
+                            if (carrito.vacio)
+                              const _Vacio()
+                            else if (ancha)
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: _Tabla(
+                                      carrito: carrito,
+                                      onCambiarCantidad:
+                                          acciones.cambiarCantidad,
+                                      onQuitar: acciones.quitar,
                                     ),
-                                  ],
-                                )
-                              else ...[
-                                _Tabla(carrito: _carrito),
-                                const SizedBox(height: 16),
-                                _Resumen(
-                                  carrito: _carrito,
-                                  onAviso: _aviso,
-                                  onContinuar: _continuar,
-                                ),
-                              ],
+                                  ),
+                                  const SizedBox(width: 20),
+                                  SizedBox(
+                                    width: 400,
+                                    child: _Resumen(
+                                      carrito: carrito,
+                                      onAviso: _aviso,
+                                      onVaciar: acciones.vaciar,
+                                      onContinuar: _continuar,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else ...[
+                              _Tabla(
+                                carrito: carrito,
+                                onCambiarCantidad: acciones.cambiarCantidad,
+                                onQuitar: acciones.quitar,
+                              ),
+                              const SizedBox(height: 16),
+                              _Resumen(
+                                carrito: carrito,
+                                onAviso: _aviso,
+                                onVaciar: acciones.vaciar,
+                                onContinuar: _continuar,
+                              ),
                             ],
-                          ),
+                          ],
                         ),
                       ),
                     ),
-                    if (!ancha) const PieTienda(),
-                  ],
-                ),
+                  ),
+                  if (!ancha) const PieTienda(),
+                ],
               ),
             ),
-            if (ancha) const PieTienda(),
-          ],
-        ),
+          ),
+          if (ancha) const PieTienda(),
+        ],
       ),
     );
   }
 
   Future<void> _continuar() async {
-    if (_carrito.vacio) return;
+    if (ref.read(carritoProvider).vacio) return;
     if (!await solicitarSesionParaComprar(context) || !mounted) return;
     Navigator.of(context).push(RutaConCarga(destino: const PagoScreen()));
   }
@@ -234,9 +246,15 @@ class _Vacio extends StatelessWidget {
 }
 
 class _Tabla extends StatelessWidget {
-  final CarritoService carrito;
+  final EstadoCarrito carrito;
+  final void Function(String, int) onCambiarCantidad;
+  final ValueChanged<String> onQuitar;
 
-  const _Tabla({required this.carrito});
+  const _Tabla({
+    required this.carrito,
+    required this.onCambiarCantidad,
+    required this.onQuitar,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +280,11 @@ class _Tabla extends StatelessWidget {
           ),
           for (final item in carrito.items) ...[
             const Divider(height: 1, color: AppColors.borde),
-            _FilaItem(item: item, carrito: carrito),
+            _FilaItem(
+              item: item,
+              onCambiarCantidad: onCambiarCantidad,
+              onQuitar: onQuitar,
+            ),
           ],
         ],
       ),
@@ -272,9 +294,14 @@ class _Tabla extends StatelessWidget {
 
 class _FilaItem extends StatelessWidget {
   final ItemCarrito item;
-  final CarritoService carrito;
+  final void Function(String, int) onCambiarCantidad;
+  final ValueChanged<String> onQuitar;
 
-  const _FilaItem({required this.item, required this.carrito});
+  const _FilaItem({
+    required this.item,
+    required this.onCambiarCantidad,
+    required this.onQuitar,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -313,7 +340,8 @@ class _FilaItem extends StatelessWidget {
                     _BotonCantidad(
                       icono: Icons.remove,
                       tooltip: 'Disminuir',
-                      onPressed: () => carrito.cambiarCantidad(item, -1),
+                      onPressed: () =>
+                          onCambiarCantidad(item.producto.nombre, -1),
                     ),
                     SizedBox(
                       width: 34,
@@ -326,7 +354,8 @@ class _FilaItem extends StatelessWidget {
                     _BotonCantidad(
                       icono: Icons.add,
                       tooltip: 'Aumentar',
-                      onPressed: () => carrito.cambiarCantidad(item, 1),
+                      onPressed: () =>
+                          onCambiarCantidad(item.producto.nombre, 1),
                     ),
                   ],
                 ),
@@ -365,7 +394,7 @@ class _FilaItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () => carrito.quitar(item),
+                  onPressed: () => onQuitar(item.producto.nombre),
                   icon: const Icon(
                     Icons.delete_outline,
                     size: 17,
@@ -412,14 +441,16 @@ class _BotonCantidad extends StatelessWidget {
 }
 
 class _Resumen extends StatelessWidget {
-  final CarritoService carrito;
+  final EstadoCarrito carrito;
   final void Function(String) onAviso;
   final VoidCallback onContinuar;
+  final VoidCallback onVaciar;
 
   const _Resumen({
     required this.carrito,
     required this.onAviso,
     required this.onContinuar,
+    required this.onVaciar,
   });
 
   @override
@@ -518,7 +549,7 @@ class _Resumen extends StatelessWidget {
                   width: 48,
                   height: 48,
                   child: IconButton(
-                    onPressed: carrito.vaciar,
+                    onPressed: onVaciar,
                     style: IconButton.styleFrom(
                       backgroundColor: _rojo.withValues(alpha: 0.1),
                       side: BorderSide(color: _rojo.withValues(alpha: 0.5)),

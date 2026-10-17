@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/acceso_compra.dart';
 import '../../core/app_theme.dart';
 import '../../core/formato.dart';
 import '../../models/producto.dart';
-import '../../services/carrito_service.dart';
+import '../../providers/carrito_provider.dart';
 import '../../widgets/cabecera_tienda.dart';
 import '../../widgets/imagen_producto.dart';
 import '../../widgets/pantalla_base.dart';
@@ -32,16 +33,16 @@ class _ServicioRed {
   });
 }
 
-class DetalleRedesScreen extends StatefulWidget {
+class DetalleRedesScreen extends ConsumerStatefulWidget {
   final Producto producto;
 
   const DetalleRedesScreen({super.key, required this.producto});
 
   @override
-  State<DetalleRedesScreen> createState() => _DetalleRedesScreenState();
+  ConsumerState<DetalleRedesScreen> createState() => _DetalleRedesScreenState();
 }
 
-class _DetalleRedesScreenState extends State<DetalleRedesScreen> {
+class _DetalleRedesScreenState extends ConsumerState<DetalleRedesScreen> {
   final _busqueda = TextEditingController();
   final _enlace = TextEditingController();
   _ServicioRed? _seleccionado;
@@ -158,7 +159,7 @@ class _DetalleRedesScreenState extends State<DetalleRedesScreen> {
       logo: p.logo,
       banner: p.banner,
     );
-    CarritoService.instancia.agregar(producto);
+    ref.read(carritoProvider.notifier).agregar(producto);
     if (abrirCarrito) {
       Navigator.of(context).push(RutaConCarga(destino: const CarritoScreen()));
     } else {

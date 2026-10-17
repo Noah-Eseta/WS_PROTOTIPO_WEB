@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'support/carrito_test_scope.dart';
+
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/services/sesion_service.dart';
 import 'package:prototipo_app/widgets/cabecera_tienda.dart';
 import 'package:prototipo_app/widgets/ventana_notificaciones.dart';
 
 void main() {
+  late ProviderContainer container;
+  setUp(() => container = ProviderContainer());
+  tearDown(() => container.dispose());
+
   testWidgets('La ventana de notificaciones hereda el estilo de la tienda', (
     tester,
   ) async {
@@ -19,14 +27,17 @@ void main() {
     SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.tema,
-        home: Scaffold(
-          body: CabeceraTienda(
-            compacto: false,
-            margen: 16,
-            onLogin: () {},
-            onCarrito: () {},
+      conCarritoScope(
+        container,
+        MaterialApp(
+          theme: AppTheme.tema,
+          home: Scaffold(
+            body: CabeceraTienda(
+              compacto: false,
+              margen: 16,
+              onLogin: () {},
+              onCarrito: () {},
+            ),
           ),
         ),
       ),
@@ -53,7 +64,7 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.notifications_none));
     await tester.pumpAndSettle();
-    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(conCarritoScope(container, const SizedBox()));
     await tester.pump();
     expect(tester.takeException(), isNull);
   });
@@ -71,14 +82,17 @@ void main() {
       });
 
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.tema,
-          home: Scaffold(
-            body: CabeceraTienda(
-              compacto: true,
-              margen: 16,
-              onLogin: () {},
-              onCarrito: () {},
+        conCarritoScope(
+          container,
+          MaterialApp(
+            theme: AppTheme.tema,
+            home: Scaffold(
+              body: CabeceraTienda(
+                compacto: true,
+                margen: 16,
+                onLogin: () {},
+                onCarrito: () {},
+              ),
             ),
           ),
         ),

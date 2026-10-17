@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/acceso_compra.dart';
 import '../../core/app_theme.dart';
 import '../../core/formato.dart';
 import '../../models/producto.dart';
-import '../../services/carrito_service.dart';
+import '../../providers/carrito_provider.dart';
 import '../../widgets/cabecera_tienda.dart';
 import '../../widgets/imagen_producto.dart';
 import '../../widgets/pantalla_base.dart';
@@ -55,16 +56,17 @@ const _paquetesFreeFire = <_PaqueteJuego>[
   ),
 ];
 
-class DetalleJuegosScreen extends StatefulWidget {
+class DetalleJuegosScreen extends ConsumerStatefulWidget {
   final Producto producto;
 
   const DetalleJuegosScreen({super.key, required this.producto});
 
   @override
-  State<DetalleJuegosScreen> createState() => _DetalleJuegosScreenState();
+  ConsumerState<DetalleJuegosScreen> createState() =>
+      _DetalleJuegosScreenState();
 }
 
-class _DetalleJuegosScreenState extends State<DetalleJuegosScreen> {
+class _DetalleJuegosScreenState extends ConsumerState<DetalleJuegosScreen> {
   final _jugador = TextEditingController();
   final _codigo = TextEditingController();
   int _seleccion = 0;
@@ -115,7 +117,7 @@ class _DetalleJuegosScreenState extends State<DetalleJuegosScreen> {
     if (!_listo) return;
     if (!await solicitarSesionParaComprar(context) || !mounted) return;
     final seleccionado = _productoParaCarrito();
-    CarritoService.instancia.agregar(seleccionado);
+    ref.read(carritoProvider.notifier).agregar(seleccionado);
     if (abrirCarrito) {
       Navigator.of(context).push(RutaConCarga(destino: const CarritoScreen()));
     } else {

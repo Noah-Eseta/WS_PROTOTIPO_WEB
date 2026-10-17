@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'support/carrito_test_scope.dart';
+
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/models/producto.dart';
 import 'package:prototipo_app/screens/pago_screen.dart';
-import 'package:prototipo_app/services/carrito_service.dart';
+import 'package:prototipo_app/providers/carrito_provider.dart';
 import 'package:prototipo_app/services/pedido_service.dart';
 
 void main() {
+  late ProviderContainer container;
+  setUp(() => container = ProviderContainer());
+  tearDown(() => container.dispose());
+
   const producto = Producto(
     nombre: 'Producto de prueba',
     subtitulo: 'Digital',
@@ -21,7 +29,7 @@ void main() {
   testWidgets('El pago permite elegir método y cabe en móvil y escritorio', (
     tester,
   ) async {
-    final carrito = CarritoService.instancia;
+    final carrito = container.read(carritoProvider.notifier);
     carrito.vaciar();
     carrito.agregar(producto);
     addTearDown(carrito.vaciar);
@@ -30,7 +38,10 @@ void main() {
       tester.view.physicalSize = Size(ancho, 800);
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(
-        MaterialApp(theme: AppTheme.tema, home: const PagoScreen()),
+        conCarritoScope(
+          container,
+          MaterialApp(theme: AppTheme.tema, home: const PagoScreen()),
+        ),
       );
       expect(find.text('Métodos de pago'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -60,15 +71,18 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.tema,
-        home: ConfirmacionPedidoScreen(
-          pedido: PedidoDemo(
-            numero: 1,
-            fecha: DateTime(2026, 10, 17),
-            metodoPago: 'Yape',
-            productos: const ['Producto de prueba x1'],
-            total: 6,
+      conCarritoScope(
+        container,
+        MaterialApp(
+          theme: AppTheme.tema,
+          home: ConfirmacionPedidoScreen(
+            pedido: PedidoDemo(
+              numero: 1,
+              fecha: DateTime(2026, 10, 17),
+              metodoPago: 'Yape',
+              productos: const ['Producto de prueba x1'],
+              total: 6,
+            ),
           ),
         ),
       ),

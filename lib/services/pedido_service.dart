@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'carrito_service.dart';
+import '../models/estado_carrito.dart';
 import 'sesion_service.dart';
 
 class PedidoDemo {
@@ -27,7 +27,11 @@ class PedidoService extends ChangeNotifier {
   final List<PedidoDemo> _pedidos = [];
   List<PedidoDemo> get pedidos => List.unmodifiable(_pedidos);
 
-  PedidoDemo registrar(CarritoService carrito, String metodoPago) {
+  PedidoDemo registrar(
+    EstadoCarrito carrito,
+    String metodoPago, {
+    required VoidCallback vaciarCarrito,
+  }) {
     if (!SesionService.instancia.iniciada) {
       throw StateError('Debes iniciar sesión para comprar');
     }
@@ -44,7 +48,7 @@ class PedidoService extends ChangeNotifier {
       total: carrito.total,
     );
     _pedidos.insert(0, pedido);
-    carrito.vaciar();
+    vaciarCarrito();
     notifyListeners();
     return pedido;
   }

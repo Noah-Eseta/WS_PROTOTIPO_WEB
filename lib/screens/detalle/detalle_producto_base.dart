@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_theme.dart';
 import '../../core/acceso_compra.dart';
 import '../../core/formato.dart';
 import '../../models/producto.dart';
-import '../../services/carrito_service.dart';
+import '../../providers/carrito_provider.dart';
 import '../../widgets/cabecera_tienda.dart';
 import '../../widgets/imagen_producto.dart';
 import '../../widgets/pantalla_base.dart';
@@ -23,7 +24,7 @@ class DetalleItem {
 }
 
 /// Estructura común del detalle de compra; cada categoría aporta su contenido.
-class DetalleProductoBase extends StatefulWidget {
+class DetalleProductoBase extends ConsumerStatefulWidget {
   final Producto producto;
   final String ruta;
   final List<DetalleItem> insignias;
@@ -42,10 +43,11 @@ class DetalleProductoBase extends StatefulWidget {
   });
 
   @override
-  State<DetalleProductoBase> createState() => _DetalleProductoBaseState();
+  ConsumerState<DetalleProductoBase> createState() =>
+      _DetalleProductoBaseState();
 }
 
-class _DetalleProductoBaseState extends State<DetalleProductoBase> {
+class _DetalleProductoBaseState extends ConsumerState<DetalleProductoBase> {
   final _codigo = TextEditingController();
   bool _codigoAbierto = false;
   int _pestana = 0;
@@ -66,13 +68,13 @@ class _DetalleProductoBaseState extends State<DetalleProductoBase> {
 
   Future<void> _agregar() async {
     if (!await solicitarSesionParaComprar(context) || !mounted) return;
-    CarritoService.instancia.agregar(p);
+    ref.read(carritoProvider.notifier).agregar(p);
     _aviso('${p.nombre} añadido al carrito');
   }
 
   Future<void> _comprarAhora() async {
     if (!await solicitarSesionParaComprar(context) || !mounted) return;
-    CarritoService.instancia.agregar(p);
+    ref.read(carritoProvider.notifier).agregar(p);
     Navigator.of(context).push(RutaConCarga(destino: const CarritoScreen()));
   }
 

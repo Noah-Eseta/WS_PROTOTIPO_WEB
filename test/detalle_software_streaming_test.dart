@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'support/carrito_test_scope.dart';
+
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/models/producto.dart';
 import 'package:prototipo_app/screens/detalle/detalle_software_screen.dart';
 import 'package:prototipo_app/screens/detalle/detalle_streaming_screen.dart';
 
 void main() {
+  late ProviderContainer container;
+  setUp(() => container = ProviderContainer());
+  tearDown(() => container.dispose());
+
   const software = Producto(
     nombre: 'KASPERSKY PREMIUM + VPN',
     subtitulo: 'ACTIVACIÓN A DOMINIO',
@@ -44,7 +52,10 @@ void main() {
         const DetalleStreamingScreen(producto: streaming),
       ]) {
         await tester.pumpWidget(
-          MaterialApp(theme: AppTheme.tema, home: pantalla),
+          conCarritoScope(
+            container,
+            MaterialApp(theme: AppTheme.tema, home: pantalla),
+          ),
         );
         expect(
           find.text(

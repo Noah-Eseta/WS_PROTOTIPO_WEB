@@ -83,41 +83,44 @@ class TarjetaProducto extends StatelessWidget {
             const Spacer(),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-              child: Row(
+              // Conserva la fila cuando ambos elementos caben a su ancho natural.
+              // Si no caben, apila el contenido sin encoger ni recortar precios.
+              child: OverflowBar(
+                alignment: MainAxisAlignment.spaceBetween,
+                overflowAlignment: OverflowBarAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!p.disponible)
-                          const Text(
-                            'Sin disponibilidad',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                              color: AppColors.textoSecundario,
-                            ),
-                          )
-                        else ...[
-                          if (p.precioAntes != null)
-                            Text(
-                              formatoPrecio(p.precioAntes!),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textoSecundario,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                            ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!p.disponible)
+                        const Text(
+                          'Sin disponibilidad',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            color: AppColors.textoSecundario,
+                          ),
+                        )
+                      else ...[
+                        if (p.precioAntes != null)
                           Text(
-                            formatoPrecio(p.precio!),
+                            formatoPrecio(p.precioAntes!),
                             style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
+                              fontSize: 12,
+                              color: AppColors.textoSecundario,
+                              decoration: TextDecoration.lineThrough,
                             ),
                           ),
-                        ],
+                        Text(
+                          formatoPrecio(p.precio!),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(

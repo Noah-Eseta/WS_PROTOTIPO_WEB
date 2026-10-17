@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/acceso_compra.dart';
 import '../core/app_theme.dart';
 import '../core/formato.dart';
-import '../services/carrito_service.dart';
+import '../providers/carrito_provider.dart';
+import '../models/estado_carrito.dart';
 import '../services/pedido_service.dart';
 import '../widgets/pantalla_carga.dart';
 import '../widgets/pie_tienda.dart';
@@ -12,22 +14,23 @@ import 'perfil_screen.dart';
 const _fondoPanel = Color(0xFF101D30);
 const _bordePanel = Color(0xFF214463);
 
-class PagoScreen extends StatefulWidget {
+class PagoScreen extends ConsumerStatefulWidget {
   const PagoScreen({super.key});
 
   @override
-  State<PagoScreen> createState() => _PagoScreenState();
+  ConsumerState<PagoScreen> createState() => _PagoScreenState();
 }
 
-class _PagoScreenState extends State<PagoScreen> {
+class _PagoScreenState extends ConsumerState<PagoScreen> {
   String? _metodo;
 
   Future<void> _pagar() async {
-    if (_metodo == null || CarritoService.instancia.vacio) return;
+    if (_metodo == null || ref.read(carritoProvider).vacio) return;
     if (!await solicitarSesionParaComprar(context) || !mounted) return;
     final pedido = PedidoService.instancia.registrar(
-      CarritoService.instancia,
+      ref.read(carritoProvider),
       _metodo!,
+      vaciarCarrito: ref.read(carritoProvider.notifier).vaciar,
     );
     Navigator.of(context).pushReplacement(
       RutaConCarga(destino: ConfirmacionPedidoScreen(pedido: pedido)),
@@ -136,7 +139,7 @@ class _PagoScreenState extends State<PagoScreen> {
     );
   }
 
-  Widget _resumen(CarritoService carrito) => Container(
+  Widget _resumen(EstadoCarrito carrito) => Container(
     padding: const EdgeInsets.all(24),
     decoration: BoxDecoration(
       gradient: const LinearGradient(
@@ -256,7 +259,7 @@ class _PagoScreenState extends State<PagoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final carrito = CarritoService.instancia;
+    final carrito = ref.watch(carritoProvider);
     return Scaffold(
       appBar: _barra('Finalizar compra'),
       body: LayoutBuilder(

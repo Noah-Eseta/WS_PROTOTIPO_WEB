@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'support/carrito_test_scope.dart';
+
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/screens/saldo_screen.dart';
 import 'package:prototipo_app/services/sesion_service.dart';
 import 'package:prototipo_app/widgets/cabecera_tienda.dart';
 
 void main() {
+  late ProviderContainer container;
+  setUp(() => container = ProviderContainer());
+  tearDown(() => container.dispose());
+
   testWidgets('El saldo se ve en móvil y se actualiza después de recargar', (
     tester,
   ) async {
@@ -19,14 +27,17 @@ void main() {
 
     SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.tema,
-        home: Scaffold(
-          body: CabeceraTienda(
-            compacto: true,
-            margen: 16,
-            onLogin: () {},
-            onCarrito: () {},
+      conCarritoScope(
+        container,
+        MaterialApp(
+          theme: AppTheme.tema,
+          home: Scaffold(
+            body: CabeceraTienda(
+              compacto: true,
+              margen: 16,
+              onLogin: () {},
+              onCarrito: () {},
+            ),
           ),
         ),
       ),

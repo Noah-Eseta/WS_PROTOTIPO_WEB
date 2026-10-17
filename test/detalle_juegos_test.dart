@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'support/carrito_test_scope.dart';
+
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/models/producto.dart';
 import 'package:prototipo_app/screens/detalle/detalle_juegos_screen.dart';
 import 'package:prototipo_app/screens/detalle/detalle_producto.dart';
-import 'package:prototipo_app/services/carrito_service.dart';
+import 'package:prototipo_app/providers/carrito_provider.dart';
 import 'package:prototipo_app/services/sesion_service.dart';
 
 void main() {
+  late ProviderContainer container;
+  setUp(() => container = ProviderContainer());
+  tearDown(() => container.dispose());
+
   const freeFire = Producto(
     nombre: 'FREE FIRE +10%',
     subtitulo: 'DIAMANTES Y PAQUETES',
@@ -34,7 +42,7 @@ void main() {
   ) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
-    final carrito = CarritoService.instancia;
+    final carrito = container.read(carritoProvider.notifier);
     carrito.vaciar();
     SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
     addTearDown(() {
@@ -46,9 +54,12 @@ void main() {
 
     expect(detalleParaProducto(freeFire), isA<DetalleJuegosScreen>());
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.tema,
-        home: const DetalleJuegosScreen(producto: freeFire),
+      conCarritoScope(
+        container,
+        MaterialApp(
+          theme: AppTheme.tema,
+          home: const DetalleJuegosScreen(producto: freeFire),
+        ),
       ),
     );
     expect(find.text('DIAMANTES'), findsOneWidget);
@@ -67,9 +78,15 @@ void main() {
     await tester.tap(agregar);
     await tester.pump();
 
-    expect(carrito.items.single.producto.precio, 8);
-    expect(carrito.items.single.producto.nombre, contains('310 + 31'));
-    expect(carrito.items.single.producto.nombre, contains('ID 12345'));
+    expect(container.read(carritoProvider).items.single.producto.precio, 8);
+    expect(
+      container.read(carritoProvider).items.single.producto.nombre,
+      contains('310 + 31'),
+    );
+    expect(
+      container.read(carritoProvider).items.single.producto.nombre,
+      contains('ID 12345'),
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -83,9 +100,12 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.tema,
-        home: const DetalleJuegosScreen(producto: mobileLegends),
+      conCarritoScope(
+        container,
+        MaterialApp(
+          theme: AppTheme.tema,
+          home: const DetalleJuegosScreen(producto: mobileLegends),
+        ),
       ),
     );
     expect(find.text('PAQUETE DISPONIBLE'), findsOneWidget);
@@ -104,9 +124,12 @@ void main() {
       tester.view.physicalSize = Size(ancho, 900);
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.tema,
-          home: const DetalleJuegosScreen(producto: freeFire),
+        conCarritoScope(
+          container,
+          MaterialApp(
+            theme: AppTheme.tema,
+            home: const DetalleJuegosScreen(producto: freeFire),
+          ),
         ),
       );
       expect(find.text('Resumen de compra'), findsOneWidget);

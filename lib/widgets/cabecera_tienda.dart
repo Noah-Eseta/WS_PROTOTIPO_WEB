@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/app_theme.dart';
 import '../core/busqueda_producto.dart';
 import '../core/formato.dart';
 import '../models/producto.dart';
-import '../services/carrito_service.dart';
+import '../providers/carrito_provider.dart';
 import '../services/pedido_service.dart';
 import '../services/saldo_service.dart';
 import '../services/sesion_service.dart';
@@ -405,35 +406,41 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
                 },
               ),
               ListenableBuilder(
-                listenable: Listenable.merge([
-                  CarritoService.instancia,
-                  SesionService.instancia,
-                ]),
+                listenable: SesionService.instancia,
                 builder: (_, _) {
                   if (!SesionService.instancia.iniciada) {
                     return const SizedBox.shrink();
                   }
-                  return _EscalaAlPasarCursor(
-                    child: IconButton(
-                      tooltip: null,
-                      onPressed: onCarrito,
-                      padding: compacto ? EdgeInsets.zero : null,
-                      constraints: compacto
-                          ? const BoxConstraints.tightFor(width: 36, height: 36)
-                          : null,
-                      visualDensity: VisualDensity.compact,
-                      icon: Badge(
-                        isLabelVisible:
-                            CarritoService.instancia.cantidadTotal > 0,
-                        label: Text(
-                          '${CarritoService.instancia.cantidadTotal}',
+                  return Consumer(
+                    builder: (context, ref, _) {
+                      final cantidad = ref.watch(
+                        carritoProvider.select(
+                          (estado) => estado.cantidadTotal,
                         ),
-                        child: const Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 20,
+                      );
+                      return _EscalaAlPasarCursor(
+                        child: IconButton(
+                          tooltip: null,
+                          onPressed: onCarrito,
+                          padding: compacto ? EdgeInsets.zero : null,
+                          constraints: compacto
+                              ? const BoxConstraints.tightFor(
+                                  width: 36,
+                                  height: 36,
+                                )
+                              : null,
+                          visualDensity: VisualDensity.compact,
+                          icon: Badge(
+                            isLabelVisible: cantidad > 0,
+                            label: Text('$cantidad'),
+                            child: const Icon(
+                              Icons.shopping_cart_outlined,
+                              size: 20,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               ),

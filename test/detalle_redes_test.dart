@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'support/carrito_test_scope.dart';
+
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/models/producto.dart';
 import 'package:prototipo_app/screens/detalle/detalle_producto.dart';
 import 'package:prototipo_app/screens/detalle/detalle_redes_screen.dart';
-import 'package:prototipo_app/services/carrito_service.dart';
+import 'package:prototipo_app/providers/carrito_provider.dart';
 import 'package:prototipo_app/services/sesion_service.dart';
 
 void main() {
+  late ProviderContainer container;
+  setUp(() => container = ProviderContainer());
+  tearDown(() => container.dispose());
+
   const tiktok = Producto(
     nombre: 'TIKTOK',
     subtitulo: 'SEGUIDORES, LIKES Y VISUALIZACIONES',
@@ -24,7 +32,7 @@ void main() {
   ) async {
     tester.view.physicalSize = const Size(360, 800);
     tester.view.devicePixelRatio = 1;
-    final carrito = CarritoService.instancia;
+    final carrito = container.read(carritoProvider.notifier);
     carrito.vaciar();
     SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
     addTearDown(() {
@@ -36,9 +44,12 @@ void main() {
 
     expect(detalleParaProducto(tiktok), isA<DetalleRedesScreen>());
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.tema,
-        home: const DetalleRedesScreen(producto: tiktok),
+      conCarritoScope(
+        container,
+        MaterialApp(
+          theme: AppTheme.tema,
+          home: const DetalleRedesScreen(producto: tiktok),
+        ),
       ),
     );
     expect(tester.takeException(), isNull);
@@ -64,15 +75,21 @@ void main() {
     await tester.pump();
 
     expect(
-      carrito.items.single.producto.nombre,
+      container.read(carritoProvider).items.single.producto.nombre,
       contains('Seguidores · gradual'),
     );
-    expect(carrito.items.single.producto.nombre, contains('1100'));
     expect(
-      carrito.items.single.producto.nombre,
+      container.read(carritoProvider).items.single.producto.nombre,
+      contains('1100'),
+    );
+    expect(
+      container.read(carritoProvider).items.single.producto.nombre,
       contains('tiktok.com/@prueba'),
     );
-    expect(carrito.items.single.producto.precio, closeTo(4.268, .001));
+    expect(
+      container.read(carritoProvider).items.single.producto.precio,
+      closeTo(4.268, .001),
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -85,9 +102,12 @@ void main() {
       tester.view.physicalSize = Size(ancho, 900);
       tester.view.devicePixelRatio = 1;
       await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.tema,
-          home: const DetalleRedesScreen(producto: tiktok),
+        conCarritoScope(
+          container,
+          MaterialApp(
+            theme: AppTheme.tema,
+            home: const DetalleRedesScreen(producto: tiktok),
+          ),
         ),
       );
       expect(find.text('Resumen de compra'), findsOneWidget);
