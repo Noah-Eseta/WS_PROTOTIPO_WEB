@@ -249,7 +249,7 @@ class PerfilResumen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Aquí tienes un resumen de tu actividad en WEIKANG SHOP.',
+                      'Saldo y pedidos de demostración; no son datos reales de tu cuenta.',
                       style: TextStyle(fontSize: 14, color: Color(0xFFE0ECFA)),
                     ),
                     const SizedBox(height: 24),

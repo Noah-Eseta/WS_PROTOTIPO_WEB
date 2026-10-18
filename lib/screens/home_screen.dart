@@ -10,7 +10,7 @@ import '../models/categoria.dart';
 import '../models/producto.dart';
 import '../providers/carrito_provider.dart';
 import '../providers/catalogo_provider.dart';
-import '../services/sesion_service.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/cabecera_tienda.dart';
 import '../widgets/categorias_chips.dart';
 import '../widgets/home/catalogo_categoria.dart';
@@ -84,7 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _abrirSeccionPerfil({required bool rewards}) {
     Navigator.of(context).push(
       RutaConCarga(
-        destino: SesionService.instancia.iniciada
+        destino: ref.read(authProvider).iniciada
             ? PerfilScreen(
                 mostrarRewards: rewards,
                 mostrarColaboradores: !rewards,

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../screens/login_screen.dart';
-import '../services/sesion_service.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/pantalla_carga.dart';
 
-/// Solicita una cuenta local antes de continuar con una acción de compra.
+/// Conserva el flujo de compra; la sesión se consulta en el scope de la tienda.
 Future<bool> solicitarSesionParaComprar(BuildContext context) async {
-  if (SesionService.instancia.iniciada) return true;
+  final container = ProviderScope.containerOf(context, listen: false);
+  if (container.read(authProvider.notifier).verificarVigencia()) return true;
 
   final irALogin = await showDialog<bool>(
     context: context,
@@ -30,5 +32,6 @@ Future<bool> solicitarSesionParaComprar(BuildContext context) async {
   if (irALogin != true || !context.mounted) return false;
 
   await Navigator.of(context).push(RutaConCarga(destino: const LoginScreen()));
-  return context.mounted && SesionService.instancia.iniciada;
+  return context.mounted &&
+      container.read(authProvider.notifier).verificarVigencia();
 }

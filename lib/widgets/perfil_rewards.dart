@@ -97,7 +97,7 @@ class PerfilRewards extends StatelessWidget {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 960),
                 child: const Text(
-                  'Cada compra marca tu progreso. Continúa avanzando y descubre los beneficios de cada nivel.',
+                  'Puntos y beneficios de demostración de esta sesión; no son recompensas reales de tu cuenta.',
                   style: TextStyle(
                     color: PerfilEstilo.textoSuave,
                     fontSize: 14,

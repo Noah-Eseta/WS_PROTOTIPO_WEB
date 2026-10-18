@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../widgets/autenticacion/acceso_autenticado.dart';
 
 import '../core/app_theme.dart';
 import '../services/pedido_service.dart';
 import '../services/saldo_service.dart';
-import '../services/sesion_service.dart';
+import '../providers/auth_provider.dart';
+import '../models/estado_autenticacion.dart';
 import '../widgets/pantalla_carga.dart';
 import '../widgets/perfil_billetera.dart';
 import '../widgets/perfil_compras.dart';
@@ -25,7 +29,7 @@ enum _SeccionPerfil {
   cuenta,
 }
 
-class PerfilScreen extends StatefulWidget {
+class PerfilScreen extends ConsumerStatefulWidget {
   final bool mostrarCompras;
   final bool mostrarRewards;
   final bool mostrarColaboradores;
@@ -38,18 +42,18 @@ class PerfilScreen extends StatefulWidget {
   });
 
   @override
-  State<PerfilScreen> createState() => _PerfilScreenState();
+  ConsumerState<PerfilScreen> createState() => _PerfilScreenState();
 }
 
-class _PerfilScreenState extends State<PerfilScreen> {
+class _PerfilScreenState extends ConsumerState<PerfilScreen> {
   static const _anchoEscritorio = 1000.0;
-  final _sesion = SesionService.instancia;
+  EstadoAutenticacion get _sesion => ref.read(authProvider);
   final _pedidos = PedidoService.instancia;
   final _saldo = SaldoService.instancia;
   final _formKey = GlobalKey<FormState>();
-  late final _nombre = TextEditingController(text: _sesion.nombre);
-  late final _correo = TextEditingController(text: _sesion.correo ?? '');
-  late final _telefono = TextEditingController(text: _sesion.telefono);
+  late final TextEditingController _nombre;
+  late final TextEditingController _correo;
+  final _telefono = TextEditingController();
   late _SeccionPerfil _seccion = widget.mostrarCompras
       ? _SeccionPerfil.compras
       : widget.mostrarRewards
@@ -57,6 +61,18 @@ class _PerfilScreenState extends State<PerfilScreen> {
       : widget.mostrarColaboradores
       ? _SeccionPerfil.colaboradores
       : _SeccionPerfil.resumen;
+
+  @override
+  void initState() {
+    super.initState();
+    _nombre = TextEditingController(text: _sesion.nombre);
+    _correo = TextEditingController(text: _sesion.correo ?? '');
+    ref.listenManual(authProvider.select((s) => s.usuario), (_, usuario) {
+      _nombre.text = usuario?.nombre ?? '';
+      _correo.text = usuario?.correo ?? '';
+      _telefono.clear();
+    });
+  }
 
   @override
   void dispose() {
@@ -74,9 +90,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
   void _volverATienda() =>
       Navigator.of(context).popUntil((route) => route.isFirst);
 
-  void _cerrarSesion() {
-    _sesion.cerrarSesion();
-    _volverATienda();
+  Future<void> _cerrarSesion() async {
+    await ref.read(authProvider.notifier).cerrarSesion();
+    if (mounted) {
+      final aviso = ref.read(authProvider).error?.mensaje;
+      if (aviso != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(aviso)));
+      }
+      _volverATienda();
+    }
   }
 
   void _agregarSaldo() =>
@@ -84,52 +107,71 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(authProvider);
+    ref.listen(authProvider, (anterior, actual) {
+      if (actual.iniciada &&
+          actual.error != null &&
+          actual.error != anterior?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(actual.error!.mensaje),
+            action: SnackBarAction(
+              label: 'Reintentar',
+              onPressed: () => ref.read(authProvider.notifier).obtenerPerfil(),
+            ),
+          ),
+        );
+      }
+    });
     final ancho = MediaQuery.sizeOf(context).width;
     final escritorio = ancho >= _anchoEscritorio;
-    return Scaffold(
-      backgroundColor: const Color(0xFF07111E),
-      appBar: escritorio
-          ? null
-          : AppBar(
-              title: Text(_titulo),
-              backgroundColor: const Color(0xFF081322),
-            ),
-      drawer: escritorio ? null : Drawer(child: _navegacion()),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (escritorio) SizedBox(width: 280, child: _navegacion()),
-          Expanded(
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0A1728), Color(0xFF07111E)],
-                ),
+    return AccesoAutenticado(
+      consultarPerfil: true,
+      builder: (context) => Scaffold(
+        backgroundColor: const Color(0xFF07111E),
+        appBar: escritorio
+            ? null
+            : AppBar(
+                title: Text(_titulo),
+                backgroundColor: const Color(0xFF081322),
               ),
-              child: SafeArea(
-                top: escritorio,
-                child: ListenableBuilder(
-                  listenable: Listenable.merge([_sesion, _pedidos, _saldo]),
-                  builder: (context, _) => SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: escritorio ? 42 : 16,
-                      vertical: escritorio ? 32 : 20,
-                    ),
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1320),
-                        child: _contenido(),
+        drawer: escritorio ? null : Drawer(child: _navegacion()),
+        body: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (escritorio) SizedBox(width: 280, child: _navegacion()),
+            Expanded(
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF0A1728), Color(0xFF07111E)],
+                  ),
+                ),
+                child: SafeArea(
+                  top: escritorio,
+                  child: ListenableBuilder(
+                    listenable: Listenable.merge([_pedidos, _saldo]),
+                    builder: (context, _) => SingleChildScrollView(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: escritorio ? 42 : 16,
+                        vertical: escritorio ? 32 : 20,
+                      ),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1320),
+                          child: _contenido(),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -148,7 +190,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   };
 
   Widget _navegacion() {
-    return Container(
+    return Material(
       color: const Color(0xFF08111E),
       child: SafeArea(
         child: ListView(
@@ -207,7 +249,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                         child: Text(
                           _sesion.nombre.isEmpty
                               ? 'P'
-                              : _sesion.nombre[0].toUpperCase(),
+                              : _sesion.nombre.characters.first.toUpperCase(),
                           style: const TextStyle(
                             color: Color(0xFF41C6FF),
                             fontSize: 20,
@@ -468,19 +510,20 @@ class _PerfilScreenState extends State<PerfilScreen> {
     nombre: _sesion.nombre,
     correo: _sesion.correo ?? '',
     formKey: _formKey,
+    soloLectura: true,
     nombreController: _nombre,
     correoController: _correo,
     telefonoController: _telefono,
     onGuardar: () {
       if (!_formKey.currentState!.validate()) return;
-      _sesion.actualizarPerfil(
-        nombre: _nombre.text,
-        correo: _correo.text,
-        telefono: _telefono.text,
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La API todavía no permite editar el perfil ni el teléfono.',
+          ),
+        ),
       );
-      setState(() {});
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Perfil actualizado')));
     },
   );
   Widget _proximamente(IconData icono, String titulo, String detalle) =>

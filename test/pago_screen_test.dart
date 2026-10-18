@@ -1,3 +1,5 @@
+import 'support/auth_test_repository.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +14,14 @@ import 'package:prototipo_app/services/pedido_service.dart';
 
 void main() {
   late ProviderContainer container;
-  setUp(() => container = ProviderContainer());
+  setUp(() async {
+    container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(AuthTestRepository()),
+      ],
+    );
+    await iniciarSesionPrueba(container);
+  });
   tearDown(() => container.dispose());
 
   const producto = Producto(

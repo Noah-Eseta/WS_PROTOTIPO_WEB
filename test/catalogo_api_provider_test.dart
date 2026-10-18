@@ -18,7 +18,9 @@ import 'package:prototipo_app/screens/detalle/detalle_producto_base.dart';
 import 'package:prototipo_app/screens/pago_screen.dart';
 import 'package:prototipo_app/services/pedido_service.dart';
 import 'package:prototipo_app/services/producto_service.dart';
-import 'package:prototipo_app/services/sesion_service.dart';
+
+import 'support/auth_test_repository.dart';
+
 import 'package:prototipo_app/widgets/cabecera_tienda.dart';
 
 import 'support/dio_test_adapter.dart';
@@ -26,10 +28,11 @@ import 'support/dio_test_adapter.dart';
 void main() {
   late ProviderContainer container;
   late DioTestAdapter adapter;
-  setUp(() {
+  setUp(() async {
     adapter = DioTestAdapter((_) => respuestaJson(jsonCatalogoApi()));
     container = ProviderContainer(
       overrides: [
+        authRepositoryProvider.overrideWithValue(AuthTestRepository()),
         configuracionApiProvider.overrideWithValue(
           ConfiguracionApi(origen: 'api'),
         ),
@@ -39,7 +42,6 @@ void main() {
   });
   tearDown(() {
     container.dispose();
-    SesionService.instancia.cerrarSesion();
   });
 
   Future<void> montar(WidgetTester tester) async {
@@ -60,6 +62,7 @@ void main() {
     () async {
       final local = ProviderContainer(
         overrides: [
+          authRepositoryProvider.overrideWithValue(AuthTestRepository()),
           clienteHttpProvider.overrideWith(
             (ref) => throw StateError('Mock no debe leer HTTP'),
           ),
@@ -183,7 +186,7 @@ void main() {
     'Catálogo HTTP conserva búsqueda, compra, cantidades, contador y confirmación',
     (tester) async {
       expect(
-        SesionService.instancia.iniciarSesion('prueba@email.com', 'prueba_123'),
+        await tester.runAsync(() => iniciarSesionPrueba(container)),
         isTrue,
       );
       await montar(tester);

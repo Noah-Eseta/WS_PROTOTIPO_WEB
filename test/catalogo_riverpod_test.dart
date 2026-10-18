@@ -13,7 +13,9 @@ import 'package:prototipo_app/screens/detalle/detalle_producto_base.dart';
 import 'package:prototipo_app/screens/home_screen.dart';
 import 'package:prototipo_app/screens/pago_screen.dart';
 import 'package:prototipo_app/services/pedido_service.dart';
-import 'package:prototipo_app/services/sesion_service.dart';
+
+import 'support/auth_test_repository.dart';
+
 import 'package:prototipo_app/widgets/cabecera_tienda.dart';
 import 'package:prototipo_app/widgets/categorias_chips.dart';
 import 'package:prototipo_app/widgets/home/catalogo_categoria.dart';
@@ -26,13 +28,11 @@ void main() {
   late ProviderContainer container;
   late CatalogoTestRepository repositorio;
 
-  setUp(() {
+  setUp(() async {
     repositorio = CatalogoTestRepository();
-    SesionService.instancia.cerrarSesion();
   });
   tearDown(() {
     container.dispose();
-    SesionService.instancia.cerrarSesion();
   });
 
   Future<void> montar(WidgetTester tester) async {
@@ -41,7 +41,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     container = ProviderContainer(
-      overrides: [catalogoRepositoryProvider.overrideWithValue(repositorio)],
+      overrides: [
+        authRepositoryProvider.overrideWithValue(AuthTestRepository()),
+        catalogoRepositoryProvider.overrideWithValue(repositorio),
+      ],
     );
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -198,11 +201,11 @@ void main() {
   testWidgets(
     'Comprar desde el catálogo conserva contador, carrito y confirmación',
     (tester) async {
+      await montar(tester);
       expect(
-        SesionService.instancia.iniciarSesion('prueba@email.com', 'prueba_123'),
+        await tester.runAsync(() => iniciarSesionPrueba(container)),
         isTrue,
       );
-      await montar(tester);
       await tester.pumpAndSettle();
       await tester.enterText(buscador(), 'CANVA');
       await tester.testTextInput.receiveAction(TextInputAction.search);

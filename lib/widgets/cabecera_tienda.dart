@@ -8,7 +8,7 @@ import '../models/producto.dart';
 import '../providers/carrito_provider.dart';
 import '../services/pedido_service.dart';
 import '../services/saldo_service.dart';
-import '../services/sesion_service.dart';
+import '../providers/auth_provider.dart';
 import '../screens/perfil_screen.dart';
 import '../screens/saldo_screen.dart';
 import 'ventana_notificaciones.dart';
@@ -16,7 +16,7 @@ import 'pantalla_carga.dart';
 import 'logo_marca.dart';
 import 'imagen_producto.dart';
 
-class CabeceraTienda extends StatefulWidget {
+class CabeceraTienda extends ConsumerStatefulWidget {
   final bool compacto;
   final double margen;
   final VoidCallback onLogin;
@@ -38,10 +38,10 @@ class CabeceraTienda extends StatefulWidget {
   });
 
   @override
-  State<CabeceraTienda> createState() => _CabeceraTiendaState();
+  ConsumerState<CabeceraTienda> createState() => _CabeceraTiendaState();
 }
 
-class _CabeceraTiendaState extends State<CabeceraTienda> {
+class _CabeceraTiendaState extends ConsumerState<CabeceraTienda> {
   final _busqueda = TextEditingController();
   final _focoBusqueda = FocusNode();
   final _botonNotificacionesKey = GlobalKey();
@@ -50,20 +50,17 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
   @override
   void initState() {
     super.initState();
-    SesionService.instancia.addListener(_cerrarSiNoHaySesion);
+    ref.listenManual(authProvider, (_, actual) {
+      if (!actual.iniciada) _cerrarNotificaciones();
+    });
   }
 
   @override
   void dispose() {
-    SesionService.instancia.removeListener(_cerrarSiNoHaySesion);
     _cerrarNotificaciones();
     _busqueda.dispose();
     _focoBusqueda.dispose();
     super.dispose();
-  }
-
-  void _cerrarSiNoHaySesion() {
-    if (!SesionService.instancia.iniciada) _cerrarNotificaciones();
   }
 
   void _buscar() {
@@ -72,7 +69,7 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
   }
 
   void _mostrarNotificaciones() {
-    if (!SesionService.instancia.iniciada) return;
+    if (!ref.read(authProvider).iniciada) return;
     if (_notificacionesOverlay != null) {
       _cerrarNotificaciones();
       return;
@@ -300,12 +297,9 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
   }
 
   Widget _saldoCuenta() => ListenableBuilder(
-    listenable: Listenable.merge([
-      SaldoService.instancia,
-      SesionService.instancia,
-    ]),
+    listenable: Listenable.merge([SaldoService.instancia]),
     builder: (context, _) {
-      if (!SesionService.instancia.iniciada) return const SizedBox.shrink();
+      if (!ref.read(authProvider).iniciada) return const SizedBox.shrink();
       return _EscalaAlPasarCursor(
         child: InkWell(
           onTap: () =>
@@ -348,6 +342,7 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(authProvider);
     return Container(
       padding: EdgeInsets.fromLTRB(margen, 12, margen, 10),
       decoration: const BoxDecoration(
@@ -375,12 +370,11 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
               if (!compacto) const SizedBox(width: 28),
               ListenableBuilder(
                 listenable: Listenable.merge([
-                  SesionService.instancia,
                   PedidoService.instancia,
                   SaldoService.instancia,
                 ]),
                 builder: (context, _) {
-                  final activa = SesionService.instancia.iniciada;
+                  final activa = ref.read(authProvider).iniciada;
                   if (!activa) return const SizedBox.shrink();
                   final hayAvisos =
                       PedidoService.instancia.pedidos.isNotEmpty ||
@@ -405,10 +399,9 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
                   );
                 },
               ),
-              ListenableBuilder(
-                listenable: SesionService.instancia,
-                builder: (_, _) {
-                  if (!SesionService.instancia.iniciada) {
+              Builder(
+                builder: (context) {
+                  if (!ref.read(authProvider).iniciada) {
                     return const SizedBox.shrink();
                   }
                   return Consumer(
@@ -448,10 +441,9 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
               if (!compacto) _saldoCuenta(),
               SizedBox(width: compacto ? 6 : 16),
               _EscalaAlPasarCursor(
-                child: ListenableBuilder(
-                  listenable: SesionService.instancia,
-                  builder: (_, _) {
-                    final sesion = SesionService.instancia;
+                child: Builder(
+                  builder: (context) {
+                    final sesion = ref.read(authProvider);
                     if (!sesion.iniciada) {
                       return Semantics(
                         label: 'Iniciar sesión',
@@ -492,15 +484,21 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
                         borderRadius: BorderRadius.circular(16),
                         side: const BorderSide(color: AppColors.borde),
                       ),
-                      onSelected: (valor) {
+                      onSelected: (valor) async {
                         if (valor == 'perfil') {
                           Navigator.of(
                             context,
                           ).push(RutaConCarga(destino: const PerfilScreen()));
                         } else if (valor == 'salir') {
-                          sesion.cerrarSesion();
+                          await ref.read(authProvider.notifier).cerrarSesion();
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Sesión cerrada')),
+                            SnackBar(
+                              content: Text(
+                                ref.read(authProvider).error?.mensaje ??
+                                    'Sesión cerrada',
+                              ),
+                            ),
                           );
                         }
                       },
@@ -516,7 +514,8 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
                                 child: Text(
                                   sesion.nombre.isEmpty
                                       ? 'P'
-                                      : sesion.nombre[0].toUpperCase(),
+                                      : sesion.nombre.characters.first
+                                            .toUpperCase(),
                                   style: const TextStyle(
                                     color: AppColors.acento,
                                     fontWeight: FontWeight.w800,
@@ -597,7 +596,7 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
                         child: Text(
                           sesion.nombre.isEmpty
                               ? 'P'
-                              : sesion.nombre[0].toUpperCase(),
+                              : sesion.nombre.characters.first.toUpperCase(),
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
@@ -608,9 +607,8 @@ class _CabeceraTiendaState extends State<CabeceraTienda> {
             ],
           ),
           if (compacto)
-            ListenableBuilder(
-              listenable: SesionService.instancia,
-              builder: (context, _) => SesionService.instancia.iniciada
+            Builder(
+              builder: (context) => ref.read(authProvider).iniciada
                   ? Padding(
                       padding: const EdgeInsets.only(top: 7),
                       child: Align(

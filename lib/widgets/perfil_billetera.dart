@@ -35,7 +35,7 @@ class PerfilSaldo extends StatelessWidget {
       children: [
         const PerfilEncabezado(
           titulo: 'Mi saldo',
-          descripcion: 'Tu billetera y todas tus recargas en un solo lugar.',
+          descripcion: 'Saldo y recargas de demostración de esta sesión; no son fondos reales.',
           icono: Icons.account_balance_wallet_outlined,
           etiqueta: 'BILLETERA',
         ),
@@ -272,7 +272,7 @@ class _PerfilTransaccionesState extends State<PerfilTransacciones> {
       children: [
         const PerfilEncabezado(
           titulo: 'Transacciones',
-          descripcion: 'Sigue el detalle de tus compras y recargas.',
+          descripcion: 'Compras y recargas de demostración; no son movimientos reales de tu cuenta.',
           icono: Icons.receipt_long_outlined,
           etiqueta: 'BILLETERA',
         ),

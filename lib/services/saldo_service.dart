@@ -24,6 +24,13 @@ class SaldoService extends ChangeNotifier {
   final List<RecargaDemo> _recargas = [];
   List<RecargaDemo> get recargas => List.unmodifiable(_recargas);
 
+  void limpiar() {
+    if (_centimos == 0 && _recargas.isEmpty) return;
+    _centimos = 0;
+    _recargas.clear();
+    notifyListeners();
+  }
+
   RecargaDemo recargar({required int centimos, required String metodoPago}) {
     if (centimos <= 0 || centimos > 100000) {
       throw ArgumentError.value(

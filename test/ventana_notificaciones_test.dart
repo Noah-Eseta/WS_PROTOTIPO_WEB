@@ -5,13 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'support/carrito_test_scope.dart';
 
 import 'package:prototipo_app/core/app_theme.dart';
-import 'package:prototipo_app/services/sesion_service.dart';
+
+import 'support/auth_test_repository.dart';
+
 import 'package:prototipo_app/widgets/cabecera_tienda.dart';
 import 'package:prototipo_app/widgets/ventana_notificaciones.dart';
 
 void main() {
   late ProviderContainer container;
-  setUp(() => container = ProviderContainer());
+  setUp(
+    () => container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(AuthTestRepository()),
+      ],
+    ),
+  );
   tearDown(() => container.dispose());
 
   testWidgets('La ventana de notificaciones hereda el estilo de la tienda', (
@@ -22,9 +30,8 @@ void main() {
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
-      SesionService.instancia.cerrarSesion();
     });
-    SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
+    await tester.runAsync(() => iniciarSesionPrueba(container));
 
     await tester.pumpWidget(
       conCarritoScope(
@@ -74,11 +81,10 @@ void main() {
     (tester) async {
       tester.view.physicalSize = const Size(320, 800);
       tester.view.devicePixelRatio = 1;
-      SesionService.instancia.cerrarSesion();
+      await container.read(authProvider.notifier).cerrarSesion();
       addTearDown(() {
         tester.view.resetPhysicalSize();
         tester.view.resetDevicePixelRatio();
-        SesionService.instancia.cerrarSesion();
       });
 
       await tester.pumpWidget(
@@ -109,7 +115,7 @@ void main() {
       expect(find.byIcon(Icons.shopping_cart_outlined), findsNothing);
       expect(tester.takeException(), isNull);
 
-      SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
+      await tester.runAsync(() => iniciarSesionPrueba(container));
       await tester.pump();
       expect(find.text('S/ 0.00'), findsOneWidget);
       expect(campana, findsOneWidget);
@@ -130,7 +136,7 @@ void main() {
       expect(find.byType(VentanaNotificaciones), findsOneWidget);
       expect(tester.takeException(), isNull);
 
-      SesionService.instancia.cerrarSesion();
+      await container.read(authProvider.notifier).cerrarSesion();
       await tester.pump();
       expect(find.byType(VentanaNotificaciones), findsNothing);
       expect(find.text('S/ 0.00'), findsNothing);

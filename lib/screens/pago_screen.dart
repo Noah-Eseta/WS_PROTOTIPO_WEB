@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/acceso_compra.dart';
+import '../providers/auth_provider.dart';
+import '../widgets/autenticacion/acceso_autenticado.dart';
 import '../core/app_theme.dart';
 import '../core/formato.dart';
 import '../providers/carrito_provider.dart';
@@ -24,16 +26,30 @@ class PagoScreen extends ConsumerStatefulWidget {
 class _PagoScreenState extends ConsumerState<PagoScreen> {
   String? _metodo;
 
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual(authProvider.select((s) => s.usuario?.id), (_, _) {
+      setState(() => _metodo = null);
+    });
+  }
+
   Future<void> _pagar() async {
     if (_metodo == null || ref.read(carritoProvider).vacio) return;
     if (!await solicitarSesionParaComprar(context) || !mounted) return;
     final pedido = PedidoService.instancia.registrar(
       ref.read(carritoProvider),
       _metodo!,
+      sesionIniciada: ref.read(authProvider.notifier).verificarVigencia(),
       vaciarCarrito: ref.read(carritoProvider.notifier).vaciar,
     );
     Navigator.of(context).pushReplacement(
-      RutaConCarga(destino: ConfirmacionPedidoScreen(pedido: pedido)),
+      RutaConCarga(
+        destino: ConfirmacionPedidoScreen(
+          pedido: pedido,
+          usuarioId: ref.read(authProvider).usuario!.id,
+        ),
+      ),
     );
   }
 
@@ -260,71 +276,73 @@ class _PagoScreenState extends ConsumerState<PagoScreen> {
   @override
   Widget build(BuildContext context) {
     final carrito = ref.watch(carritoProvider);
-    return Scaffold(
-      appBar: _barra('Finalizar compra'),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final horizontal = constraints.maxWidth >= 850;
-          return SingleChildScrollView(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1080),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: constraints.maxWidth < 600 ? 16 : 32,
-                    vertical: constraints.maxWidth < 600 ? 24 : 42,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'WEIKANG SHOP  /  PAGO',
-                        style: TextStyle(
-                          color: AppColors.acento,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
+    return AccesoAutenticado(
+      builder: (context) => Scaffold(
+        appBar: _barra('Finalizar compra'),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final horizontal = constraints.maxWidth >= 850;
+            return SingleChildScrollView(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1080),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: constraints.maxWidth < 600 ? 16 : 32,
+                      vertical: constraints.maxWidth < 600 ? 24 : 42,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'WEIKANG SHOP  /  PAGO',
+                          style: TextStyle(
+                            color: AppColors.acento,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.5,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Elige cómo pagar',
-                        style: TextStyle(
-                          fontSize: constraints.maxWidth < 600 ? 30 : 40,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1,
+                        const SizedBox(height: 10),
+                        Text(
+                          'Elige cómo pagar',
+                          style: TextStyle(
+                            fontSize: constraints.maxWidth < 600 ? 30 : 40,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 7),
-                      const Text(
-                        'Selecciona el método que prefieras para completar tu pedido.',
-                        style: TextStyle(
-                          color: AppColors.textoSecundario,
-                          fontSize: 15,
+                        const SizedBox(height: 7),
+                        const Text(
+                          'Selecciona el método que prefieras para completar tu pedido.',
+                          style: TextStyle(
+                            color: AppColors.textoSecundario,
+                            fontSize: 15,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 30),
-                      if (horizontal)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: _listaMetodos()),
-                            const SizedBox(width: 24),
-                            SizedBox(width: 340, child: _resumen(carrito)),
-                          ],
-                        )
-                      else ...[
-                        _listaMetodos(),
-                        const SizedBox(height: 18),
-                        _resumen(carrito),
+                        const SizedBox(height: 30),
+                        if (horizontal)
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: _listaMetodos()),
+                              const SizedBox(width: 24),
+                              SizedBox(width: 340, child: _resumen(carrito)),
+                            ],
+                          )
+                        else ...[
+                          _listaMetodos(),
+                          const SizedBox(height: 18),
+                          _resumen(carrito),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -332,120 +350,128 @@ class _PagoScreenState extends ConsumerState<PagoScreen> {
 
 class ConfirmacionPedidoScreen extends StatelessWidget {
   final PedidoDemo pedido;
+  final int? usuarioId;
 
-  const ConfirmacionPedidoScreen({super.key, required this.pedido});
+  const ConfirmacionPedidoScreen({
+    super.key,
+    required this.pedido,
+    this.usuarioId,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _barra('Pedido confirmado'),
-      body: Center(
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 38,
-                ),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF102540), Color(0xFF0B1728)],
+    return AccesoAutenticado(
+      propietario: usuarioId,
+      builder: (context) => Scaffold(
+        appBar: _barra('Pedido confirmado'),
+        body: Center(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 640),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 38,
                   ),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: _bordePanel),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 86,
-                        height: 86,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF102540), Color(0xFF0B1728)],
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: _bordePanel),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 86,
+                          height: 86,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.acento.withValues(alpha: .13),
+                            border: Border.all(
+                              color: AppColors.acento.withValues(alpha: .6),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.check_rounded,
+                            size: 48,
+                            color: AppColors.acento,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 26),
+                      const Text(
+                        '¡Gracias por tu pedido!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 29,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Pedido de demostración registrado en esta sesión. No se realizó ningún cobro.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textoSecundario,
+                          fontSize: 14,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 26),
+                      Container(
+                        padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.acento.withValues(alpha: .13),
-                          border: Border.all(
-                            color: AppColors.acento.withValues(alpha: .6),
-                          ),
+                          color: const Color(0xFF091827),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _bordePanel),
                         ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          size: 48,
-                          color: AppColors.acento,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    const Text(
-                      '¡Gracias por tu pedido!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 29,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Tu compra fue registrada. Puedes seguirla en Compras de tu perfil.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.textoSecundario,
-                        fontSize: 14,
-                        height: 1.45,
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    Container(
-                      padding: const EdgeInsets.all(18),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF091827),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _bordePanel),
-                      ),
-                      child: Column(
-                        children: [
-                          _dato('Número de pedido', '#${pedido.numero}'),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 13),
-                            child: Divider(height: 1, color: _bordePanel),
-                          ),
-                          _dato('Método de pago', pedido.metodoPago),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 13),
-                            child: Divider(height: 1, color: _bordePanel),
-                          ),
-                          _dato(
-                            'Total',
-                            formatoPrecio(pedido.total),
-                            destacar: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 26),
-                    FilledButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        RutaConCarga(
-                          destino: const PerfilScreen(mostrarCompras: true),
+                        child: Column(
+                          children: [
+                            _dato('Número de pedido', '#${pedido.numero}'),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 13),
+                              child: Divider(height: 1, color: _bordePanel),
+                            ),
+                            _dato('Método de pago', pedido.metodoPago),
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 13),
+                              child: Divider(height: 1, color: _bordePanel),
+                            ),
+                            _dato(
+                              'Total',
+                              formatoPrecio(pedido.total),
+                              destacar: true,
+                            ),
+                          ],
                         ),
                       ),
-                      icon: const Icon(Icons.shopping_bag_outlined),
-                      label: const Text('Ver mis compras'),
-                    ),
-                    const SizedBox(height: 6),
-                    TextButton(
-                      onPressed: () =>
-                          Navigator.of(context)
-                              .popUntil((route) => route.isFirst),
-                      child: const Text('Volver a la tienda'),
-                    ),
-                  ],
+                      const SizedBox(height: 26),
+                      FilledButton.icon(
+                        onPressed: () => Navigator.of(context).push(
+                          RutaConCarga(
+                            destino: const PerfilScreen(mostrarCompras: true),
+                          ),
+                        ),
+                        icon: const Icon(Icons.shopping_bag_outlined),
+                        label: const Text('Ver mis compras'),
+                      ),
+                      const SizedBox(height: 6),
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.of(context)
+                                .popUntil((route) => route.isFirst),
+                        child: const Text('Volver a la tienda'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

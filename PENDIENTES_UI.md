@@ -142,3 +142,43 @@ Se generó el APK de depuración con modo API y permiso de Internet. No había
 dispositivos ni emuladores Android conectados, por lo que queda pendiente la
 comprobación de ejecución y conexión HTTPS en un dispositivo Android real.
 No se modificaron el backend, Railway ni los archivos de publicación de GitHub Pages.
+
+## Comprobaciones durante la autenticación real
+
+Se mantiene intacto `home_alignment_test.dart`, incluido su fallo por los dos
+overflows preexistentes de 6 px. La comparación de Home con el archivo anterior
+de Git coincide en las seis resoluciones habituales: geometría, estilos, imágenes,
+callbacks y errores. Persisten las promociones de 21 px a 600 px y 2 px a 768 px
+ya registradas en las etapas anteriores.
+
+La comprobación ampliada del perfil detectó errores anteriores adicionales:
+
+| Ancho | Resumen del perfil, antes y después |
+| --- | --- |
+| 360 px | 26 px a la derecha en el balance y 22 px abajo en un acceso rápido |
+| 390, 600 y 768 px | Sin overflows en la vista inicial comprobada |
+| 1024 y 1440 px | 13 px a la derecha en la pantalla completa |
+
+Se contrastaron el resumen y la pantalla completa con sus archivos originales de
+Git, usando los mismos datos y constraints. Las medidas y cantidades de errores
+coinciden; no se modificó su layout. Informes locales:
+`.dart_tool/auth_audit/perfil_report.json` y `perfil_screen_report.json`.
+Los diagnósticos registran los errores de ambos lados; no sustituyen ni modifican
+las verificaciones de las pruebas permanentes.
+
+Login y registro, con validaciones visibles, y saldo y pago autenticados pasan
+sus pruebas de layout a 360, 390, 600, 768, 1024 y 1440 px. Se conservan tamaños,
+fuentes, colores, imágenes y navegación. Los textos distinguen los datos financieros
+demo de la identidad real. El panel lateral de perfil utiliza el mismo color
+sobre `Material`, evitando la advertencia de Flutter sobre ListTile oculto bajo
+ColoredBox sin modificar medidas.
+
+La Web compilada con el base-href de GitHub Pages funciona en Brave headless con
+perfil aislado y seguridad normal: catálogo real de 34 productos, error/reintento,
+CORS de `/me` y cero excepciones JavaScript. No se crearon cuentas ni se usaron
+credenciales reales para estas comprobaciones. La prueba autenticada de extremo
+a extremo con una cuenta real y la ejecución física Android quedan pendientes.
+
+Validación final de autenticación: 55 pruebas nuevas aprobadas; 195 aprobadas en
+la suite completa y únicamente el fallo conocido de `home_alignment_test.dart`.
+El analizador no encuentra incidencias y `git diff --check` no detecta errores.

@@ -9,11 +9,18 @@ import 'package:prototipo_app/models/producto.dart';
 import 'package:prototipo_app/screens/detalle/detalle_juegos_screen.dart';
 import 'package:prototipo_app/screens/detalle/detalle_producto.dart';
 import 'package:prototipo_app/providers/carrito_provider.dart';
-import 'package:prototipo_app/services/sesion_service.dart';
+
+import 'support/auth_test_repository.dart';
 
 void main() {
   late ProviderContainer container;
-  setUp(() => container = ProviderContainer());
+  setUp(
+    () => container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(AuthTestRepository()),
+      ],
+    ),
+  );
   tearDown(() => container.dispose());
 
   const freeFire = Producto(
@@ -44,10 +51,10 @@ void main() {
     tester.view.devicePixelRatio = 1;
     final carrito = container.read(carritoProvider.notifier);
     carrito.vaciar();
-    SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
+    await tester.runAsync(() => iniciarSesionPrueba(container));
     addTearDown(() {
       carrito.vaciar();
-      SesionService.instancia.cerrarSesion();
+
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });

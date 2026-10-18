@@ -16,6 +16,7 @@ class PerfilCuenta extends StatelessWidget {
   final TextEditingController correoController;
   final TextEditingController telefonoController;
   final VoidCallback onGuardar;
+  final bool soloLectura;
 
   const PerfilCuenta({
     super.key,
@@ -26,6 +27,7 @@ class PerfilCuenta extends StatelessWidget {
     required this.correoController,
     required this.telefonoController,
     required this.onGuardar,
+    this.soloLectura = false,
   });
 
   @override
@@ -183,6 +185,7 @@ class PerfilCuenta extends StatelessWidget {
               titulo: 'Nombre',
               child: TextFormField(
                 controller: nombreController,
+                readOnly: soloLectura,
                 textCapitalization: TextCapitalization.words,
                 autofillHints: const [AutofillHints.name],
                 textInputAction: TextInputAction.next,
@@ -197,6 +200,7 @@ class PerfilCuenta extends StatelessWidget {
               titulo: 'Correo electrónico',
               child: TextFormField(
                 controller: correoController,
+                readOnly: soloLectura,
                 keyboardType: TextInputType.emailAddress,
                 autofillHints: const [AutofillHints.email],
                 textInputAction: TextInputAction.next,
@@ -218,6 +222,7 @@ class PerfilCuenta extends StatelessWidget {
               opcional: true,
               child: TextFormField(
                 controller: telefonoController,
+                readOnly: soloLectura,
                 keyboardType: TextInputType.phone,
                 autofillHints: const [AutofillHints.telephoneNumber],
                 textInputAction: TextInputAction.done,
@@ -245,7 +250,7 @@ class PerfilCuenta extends StatelessWidget {
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'El acceso al prototipo sigue usando la cuenta de prueba original.',
+                      'Nombre y correo provienen de Laravel. La edición de datos todavía no está disponible.',
                       style: TextStyle(
                         color: PerfilEstilo.textoSuave,
                         height: 1.5,

@@ -8,7 +8,9 @@ import 'package:prototipo_app/providers/carrito_provider.dart';
 import 'package:prototipo_app/screens/carrito_screen.dart';
 import 'package:prototipo_app/screens/pago_screen.dart';
 import 'package:prototipo_app/services/pedido_service.dart';
-import 'package:prototipo_app/services/sesion_service.dart';
+
+import 'support/auth_test_repository.dart';
+
 import 'package:prototipo_app/widgets/cabecera_tienda.dart';
 import 'package:prototipo_app/widgets/pantalla_carga.dart';
 
@@ -29,14 +31,17 @@ void main() {
   late ProviderContainer container;
   late CarritoNotifier carrito;
   EstadoCarrito estado() => container.read(carritoProvider);
-  setUp(() {
-    container = ProviderContainer();
+  setUp(() async {
+    container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(AuthTestRepository()),
+      ],
+    );
     carrito = container.read(carritoProvider.notifier);
-    SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
+    await iniciarSesionPrueba(container);
   });
   tearDown(() {
     container.dispose();
-    SesionService.instancia.cerrarSesion();
   });
 
   Future<void> montar(
@@ -190,9 +195,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  test('Registrar sin sesión no guarda ni vacía el carrito', () {
+  test('Registrar sin sesión no guarda ni vacía el carrito', () async {
     carrito.agregar(producto);
-    SesionService.instancia.cerrarSesion();
+    await container.read(authProvider.notifier).cerrarSesion();
     final pedidos = PedidoService.instancia;
     final anteriores = pedidos.pedidos.length;
     var vaciados = 0;
@@ -200,6 +205,7 @@ void main() {
       () => pedidos.registrar(
         estado(),
         'Yape',
+        sesionIniciada: container.read(authProvider).iniciada,
         vaciarCarrito: () {
           vaciados++;
           carrito.vaciar();
@@ -222,6 +228,7 @@ void main() {
         () => pedidos.registrar(
           estado(),
           'Yape',
+          sesionIniciada: container.read(authProvider).iniciada,
           vaciarCarrito: () => vaciados++,
         ),
         throwsStateError,
@@ -239,6 +246,7 @@ void main() {
     final pedido = pedidos.registrar(
       snapshot,
       'Plin',
+      sesionIniciada: container.read(authProvider).iniciada,
       vaciarCarrito: () {
         expect(pedidos.pedidos.length, anteriores + 1);
         expect(pedidos.pedidos.first.total, snapshot.total);

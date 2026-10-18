@@ -55,7 +55,7 @@ class _PerfilComprasState extends State<PerfilCompras> {
       children: [
         const PerfilEncabezado(
           titulo: 'Mis compras',
-          descripcion: 'Todo lo que compraste, en un solo lugar. Consulta los detalles de tus pedidos.',
+          descripcion: 'Pedidos de demostración de esta sesión; no son compras reales de tu cuenta.',
           icono: Icons.shopping_bag_outlined,
           etiqueta: 'GESTIÓN',
         ),

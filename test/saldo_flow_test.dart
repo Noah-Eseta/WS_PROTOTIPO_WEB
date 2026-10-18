@@ -6,12 +6,20 @@ import 'support/carrito_test_scope.dart';
 
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/screens/saldo_screen.dart';
-import 'package:prototipo_app/services/sesion_service.dart';
+
+import 'support/auth_test_repository.dart';
+
 import 'package:prototipo_app/widgets/cabecera_tienda.dart';
 
 void main() {
   late ProviderContainer container;
-  setUp(() => container = ProviderContainer());
+  setUp(
+    () => container = ProviderContainer(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(AuthTestRepository()),
+      ],
+    ),
+  );
   tearDown(() => container.dispose());
 
   testWidgets('El saldo se ve en móvil y se actualiza después de recargar', (
@@ -22,10 +30,9 @@ void main() {
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
-      SesionService.instancia.cerrarSesion();
     });
 
-    SesionService.instancia.iniciarSesion('Prueba@email.com', 'prueba_123');
+    await tester.runAsync(() => iniciarSesionPrueba(container));
     await tester.pumpWidget(
       conCarritoScope(
         container,
