@@ -43,6 +43,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+        walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
         catalogoRepositoryProvider.overrideWithValue(repositorio),
       ],

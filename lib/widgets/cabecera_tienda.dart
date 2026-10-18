@@ -7,7 +7,8 @@ import '../core/formato.dart';
 import '../models/producto.dart';
 import '../providers/carrito_provider.dart';
 import '../services/pedido_service.dart';
-import '../services/saldo_service.dart';
+import '../providers/wallet_provider.dart';
+import 'billetera/historial_billetera.dart';
 import '../providers/auth_provider.dart';
 import '../screens/perfil_screen.dart';
 import '../screens/saldo_screen.dart';
@@ -50,8 +51,11 @@ class _CabeceraTiendaState extends ConsumerState<CabeceraTienda> {
   @override
   void initState() {
     super.initState();
-    ref.listenManual(authProvider, (_, actual) {
-      if (!actual.iniciada) _cerrarNotificaciones();
+    ref.listenManual(authProvider, (anterior, actual) {
+      if (!actual.iniciada ||
+          anterior != null && anterior.usuario?.id != actual.usuario?.id) {
+        _cerrarNotificaciones();
+      }
     });
   }
 
@@ -129,10 +133,23 @@ class _CabeceraTiendaState extends ConsumerState<CabeceraTienda> {
               ),
               child: Material(
                 type: MaterialType.transparency,
-                child: VentanaNotificaciones(
-                  pedidos: PedidoService.instancia.pedidos,
-                  recargas: SaldoService.instancia.recargas,
-                  onCerrar: _cerrarNotificaciones,
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final id = ref.watch(
+                      authProvider.select((s) => s.usuario?.id),
+                    );
+                    if (id == null) return const SizedBox.shrink();
+                    return EstadoWallet(
+                      valor: ref.watch(movimientosWalletProvider(id)),
+                      reintentar: () =>
+                          ref.invalidate(movimientosWalletProvider(id)),
+                      builder: (pagina) => VentanaNotificaciones(
+                        pedidos: PedidoService.instancia.pedidos,
+                        recargas: pagina.elementos,
+                        onCerrar: _cerrarNotificaciones,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -296,9 +313,8 @@ class _CabeceraTiendaState extends ConsumerState<CabeceraTienda> {
     );
   }
 
-  Widget _saldoCuenta() => ListenableBuilder(
-    listenable: Listenable.merge([SaldoService.instancia]),
-    builder: (context, _) {
+  Widget _saldoCuenta() => Builder(
+    builder: (context) {
       if (!ref.read(authProvider).iniciada) return const SizedBox.shrink();
       return _EscalaAlPasarCursor(
         child: InkWell(
@@ -325,9 +341,8 @@ class _CabeceraTiendaState extends ConsumerState<CabeceraTienda> {
                   color: AppColors.acento,
                 ),
                 const SizedBox(width: 5),
-                Text(
-                  formatoPrecio(SaldoService.instancia.saldo),
-                  style: TextStyle(
+                SaldoWalletTexto(
+                  estilo: TextStyle(
                     fontSize: compacto ? 11 : 13,
                     fontWeight: FontWeight.w800,
                   ),
@@ -369,16 +384,20 @@ class _CabeceraTiendaState extends ConsumerState<CabeceraTienda> {
               if (compacto) const Spacer(),
               if (!compacto) const SizedBox(width: 28),
               ListenableBuilder(
-                listenable: Listenable.merge([
-                  PedidoService.instancia,
-                  SaldoService.instancia,
-                ]),
+                listenable: Listenable.merge([PedidoService.instancia]),
                 builder: (context, _) {
                   final activa = ref.read(authProvider).iniciada;
                   if (!activa) return const SizedBox.shrink();
                   final hayAvisos =
                       PedidoService.instancia.pedidos.isNotEmpty ||
-                      SaldoService.instancia.recargas.isNotEmpty;
+                      (datosWallet(
+                            ref.watch(
+                              movimientosWalletProvider(
+                                ref.read(authProvider).usuario!.id,
+                              ),
+                            ),
+                          )?.elementos.isNotEmpty ??
+                          false);
                   return _EscalaAlPasarCursor(
                     child: IconButton(
                       key: _botonNotificacionesKey,

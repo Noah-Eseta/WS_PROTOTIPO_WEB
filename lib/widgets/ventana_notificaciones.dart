@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/formato.dart';
 import '../services/pedido_service.dart';
-import '../services/saldo_service.dart';
+import '../models/billetera.dart';
 
 class VentanaNotificaciones extends StatelessWidget {
   final List<PedidoDemo> pedidos;
-  final List<RecargaDemo> recargas;
+  final List<MovimientoBilletera> recargas;
   final VoidCallback onCerrar;
 
   const VentanaNotificaciones({
@@ -25,7 +25,7 @@ class VentanaNotificaciones extends StatelessWidget {
           fecha: pedido.fecha,
           titulo: '¡Gracias por tu pedido!',
           descripcion:
-              'Tu pedido #${pedido.numero} por ${formatoPrecio(pedido.total)} ya está registrado.',
+              'Tu pedido #${pedido.numero} por ${formatoPrecio(pedido.total)} es una simulación local, sin descuento de billetera.',
           detalle: pedido.productos.join(', '),
           etiqueta: 'COMPRA',
           icono: Icons.shopping_bag_outlined,
@@ -34,10 +34,10 @@ class VentanaNotificaciones extends StatelessWidget {
       for (final recarga in recargas)
         _Aviso(
           fecha: recarga.fecha,
-          titulo: 'Saldo agregado a tu billetera',
+          titulo: recarga.titulo,
           descripcion:
-              'Agregaste ${formatoPrecio(recarga.centimos / 100)} con ${recarga.metodoPago}.',
-          etiqueta: 'BILLETERA',
+              '${formatoCentimos(recarga.centimos)} · ${recarga.descripcion}. Saldo ficticio.',
+          etiqueta: 'BILLETERA FICTICIA',
           icono: Icons.account_balance_wallet_outlined,
           color: const Color(0xFF4CDAC2),
         ),

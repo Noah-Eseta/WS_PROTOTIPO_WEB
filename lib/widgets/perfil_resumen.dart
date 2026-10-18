@@ -11,7 +11,7 @@ const _textoSuave = Color(0xFFACC0DA);
 /// Resumen visual de la cuenta. Los datos y las acciones llegan desde PerfilScreen.
 class PerfilResumen extends StatelessWidget {
   final String nombre;
-  final double saldo;
+  final String saldoTexto;
   final int puntos;
   final List<PedidoDemo> pedidos;
   final VoidCallback onAgregarSaldo;
@@ -25,7 +25,7 @@ class PerfilResumen extends StatelessWidget {
   const PerfilResumen({
     super.key,
     required this.nombre,
-    required this.saldo,
+    required this.saldoTexto,
     required this.puntos,
     required this.pedidos,
     required this.onAgregarSaldo,
@@ -115,8 +115,8 @@ class PerfilResumen extends StatelessWidget {
                 const SizedBox(height: 14),
                 _estadistica(
                   titulo: 'Billetera',
-                  valor: formatoPrecio(saldo),
-                  detalle: 'Saldo disponible',
+                  valor: saldoTexto,
+                  detalle: 'Saldo de demostración',
                   icono: Icons.account_balance_wallet_outlined,
                   onTap: onSaldo,
                 ),
@@ -249,7 +249,7 @@ class PerfilResumen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     const Text(
-                      'Saldo y pedidos de demostración; no son datos reales de tu cuenta.',
+                      'Saldo ficticio guardado en tu cuenta. Los pedidos siguen siendo simulaciones locales.',
                       style: TextStyle(fontSize: 14, color: Color(0xFFE0ECFA)),
                     ),
                     const SizedBox(height: 24),
@@ -294,7 +294,7 @@ class PerfilResumen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'SALDO DISPONIBLE',
+              'SALDO DE DEMOSTRACIÓN',
               style: TextStyle(
                 color: _textoSuave,
                 fontSize: 12,
@@ -303,7 +303,7 @@ class PerfilResumen extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              formatoPrecio(saldo),
+              saldoTexto,
               style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900),
             ),
           ],
@@ -316,7 +316,7 @@ class PerfilResumen extends StatelessWidget {
     FilledButton.icon(
       onPressed: onAgregarSaldo,
       icon: const Icon(Icons.add),
-      label: const Text('Agregar saldo'),
+      label: const Text('Ver mi billetera'),
     ),
     OutlinedButton.icon(
       onPressed: onTransacciones,

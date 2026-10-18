@@ -5,7 +5,9 @@ import '../widgets/autenticacion/acceso_autenticado.dart';
 
 import '../core/app_theme.dart';
 import '../services/pedido_service.dart';
-import '../services/saldo_service.dart';
+import '../models/billetera.dart';
+import '../providers/wallet_provider.dart';
+import '../widgets/billetera/historial_billetera.dart';
 import '../providers/auth_provider.dart';
 import '../models/estado_autenticacion.dart';
 import '../widgets/pantalla_carga.dart';
@@ -49,7 +51,6 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
   static const _anchoEscritorio = 1000.0;
   EstadoAutenticacion get _sesion => ref.read(authProvider);
   final _pedidos = PedidoService.instancia;
-  final _saldo = SaldoService.instancia;
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nombre;
   late final TextEditingController _correo;
@@ -152,7 +153,7 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
                 child: SafeArea(
                   top: escritorio,
                   child: ListenableBuilder(
-                    listenable: Listenable.merge([_pedidos, _saldo]),
+                    listenable: _pedidos,
                     builder: (context, _) => SingleChildScrollView(
                       padding: EdgeInsets.symmetric(
                         horizontal: escritorio ? 42 : 16,
@@ -459,18 +460,35 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
       'Colaboradores',
       'El programa de colaboradores estará disponible próximamente.',
     ),
-    _SeccionPerfil.notificaciones => PerfilNotificaciones(
-      pedidos: _pedidos.pedidos,
-      recargas: _saldo.recargas,
-      onCompras: () => _irA(_SeccionPerfil.compras),
-      onSaldo: () => _irA(_SeccionPerfil.saldo),
-      onTienda: _volverATienda,
+    _SeccionPerfil.notificaciones => EstadoWallet(
+      valor: ref.watch(movimientosWalletProvider(_sesion.usuario!.id)),
+      reintentar: () =>
+          ref.invalidate(movimientosWalletProvider(_sesion.usuario!.id)),
+      builder: (pagina) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PerfilNotificaciones(
+            pedidos: _pedidos.pedidos,
+            recargas: pagina.elementos,
+            onCompras: () => _irA(_SeccionPerfil.compras),
+            onSaldo: () => _irA(_SeccionPerfil.saldo),
+            onTienda: _volverATienda,
+          ),
+          const Text(
+            'Avisos de billetera correspondientes a los movimientos cargados.',
+          ),
+          TextButton(
+            onPressed: () => _irA(_SeccionPerfil.transacciones),
+            child: const Text('Ver historial de billetera'),
+          ),
+        ],
+      ),
     ),
   };
 
   Widget _resumen() => PerfilResumen(
     nombre: _sesion.nombre,
-    saldo: _saldo.saldo,
+    saldoTexto: _textoSaldo(),
     puntos: _puntos,
     pedidos: _pedidos.pedidos,
     onAgregarSaldo: _agregarSaldo,
@@ -485,18 +503,42 @@ class _PerfilScreenState extends ConsumerState<PerfilScreen> {
   Widget _compras() =>
       PerfilCompras(pedidos: _pedidos.pedidos, onTienda: _volverATienda);
 
-  Widget _saldoContenido() => PerfilSaldo(
-    saldo: _saldo.saldo,
-    recargas: _saldo.recargas,
-    onAgregarSaldo: _agregarSaldo,
-    onTransacciones: () => _irA(_SeccionPerfil.transacciones),
-  );
+  String _textoSaldo() {
+    final valor = ref.watch(walletProvider(_sesion.usuario!.id));
+    if (valor.isLoading) return 'Cargando…';
+    if (valor.hasError) return 'Error · ver billetera';
+    final saldo = datosWallet(valor);
+    return saldo == null ? 'No disponible' : formatoCentimos(saldo.centimos);
+  }
 
-  Widget _transacciones() => PerfilTransacciones(
-    pedidos: _pedidos.pedidos,
-    recargas: _saldo.recargas,
-    onAgregarSaldo: _agregarSaldo,
-    onTienda: _volverATienda,
+  Widget _saldoContenido() => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      EstadoWallet(
+        valor: ref.watch(walletProvider(_sesion.usuario!.id)),
+        reintentar: () => ref.invalidate(walletProvider(_sesion.usuario!.id)),
+        builder: (saldo) => saldo == null
+            ? const SizedBox.shrink()
+            : PerfilSaldo(
+                saldo: saldo.centimos / 100,
+                mostrarHistorial: false,
+                recargas: datosWallet(
+                  ref.watch(movimientosWalletProvider(_sesion.usuario!.id)),
+                )?.elementos,
+                historialConError: ref
+                    .watch(movimientosWalletProvider(_sesion.usuario!.id))
+                    .hasError,
+                onAgregarSaldo: _agregarSaldo,
+                onTransacciones: () => _irA(_SeccionPerfil.transacciones),
+              ),
+      ),
+      const SizedBox(height: 24),
+      _transacciones(),
+    ],
+  );
+  Widget _transacciones() => HistorialBilletera(
+    key: ValueKey((_sesion.usuario!.id, _sesion.expiraEn)),
+    usuario: _sesion.usuario!.id,
   );
   int get _puntos => _pedidos.pedidos.fold<int>(
     0,

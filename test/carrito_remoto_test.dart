@@ -37,6 +37,7 @@ void main() {
     server = CartTestRepository();
     scope = ProviderContainer(
       overrides: [
+        walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
         authRepositoryProvider.overrideWithValue(auth),
         cartRepositoryProvider.overrideWithValue(server),
         generarOperacionCarritoProvider.overrideWithValue(
@@ -111,6 +112,7 @@ void main() {
       scope.dispose();
       scope = ProviderContainer(
         overrides: [
+          walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
           authRepositoryProvider.overrideWithValue(AuthTestRepository()),
           cartRepositoryProvider.overrideWithValue(server),
         ],

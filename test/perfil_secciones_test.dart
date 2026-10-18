@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:prototipo_app/core/app_theme.dart';
 import 'package:prototipo_app/services/pedido_service.dart';
-import 'package:prototipo_app/services/saldo_service.dart';
+import 'package:prototipo_app/models/billetera.dart';
 import 'package:prototipo_app/widgets/perfil_billetera.dart';
 import 'package:prototipo_app/widgets/perfil_compras.dart';
 import 'package:prototipo_app/widgets/perfil_configuracion.dart';
@@ -17,9 +17,15 @@ void main() {
     productos: const ['CANVA PRO x1'],
     total: 7.90,
   );
-  final recarga = RecargaDemo(
+  final recarga = MovimientoBilletera(
+    id: 'id-prueba',
+    operacion: 'operacion-prueba',
+    tipo: 'admin_credit',
+    descripcion: 'Crédito de presentación',
     centimos: 2000,
-    metodoPago: 'Plin',
+    saldoAnterior: 0,
+    saldoPosterior: 2000,
+    version: 1,
     fecha: fecha.add(const Duration(minutes: 5)),
   );
 
@@ -81,10 +87,10 @@ void main() {
       ),
     );
     expect(find.text('Pedido #0001'), findsOneWidget);
-    expect(find.text('Recarga de saldo'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Recargas  1'));
+    expect(find.text('Crédito ficticio'), findsOneWidget);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Billetera  1'));
     await tester.pump();
-    expect(find.text('Recarga de saldo'), findsOneWidget);
+    expect(find.text('Crédito ficticio'), findsOneWidget);
     expect(find.text('Pedido #0001'), findsNothing);
     expect(tester.takeException(), isNull);
 
@@ -101,7 +107,7 @@ void main() {
     expect(find.text('¡Gracias por tu pedido!'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilterChip, 'Billetera · 1'));
     await tester.pump();
-    expect(find.text('Saldo agregado a tu billetera'), findsOneWidget);
+    expect(find.text('Crédito ficticio'), findsOneWidget);
     expect(find.text('¡Gracias por tu pedido!'), findsNothing);
     expect(tester.takeException(), isNull);
 

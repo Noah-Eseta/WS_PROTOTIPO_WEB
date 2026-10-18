@@ -33,6 +33,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+        walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
         configuracionApiProvider.overrideWithValue(
           ConfiguracionApi(origen: 'api'),
@@ -64,6 +65,7 @@ void main() {
       final local = ProviderContainer(
         overrides: [
           cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+          walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
           authRepositoryProvider.overrideWithValue(AuthTestRepository()),
           clienteHttpProvider.overrideWith(
             (ref) => throw StateError('Mock no debe leer HTTP'),

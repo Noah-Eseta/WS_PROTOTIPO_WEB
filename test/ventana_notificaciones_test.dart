@@ -17,6 +17,7 @@ void main() {
     () => container = ProviderContainer(
       overrides: [
         cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+        walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
       ],
     ),
@@ -117,6 +118,8 @@ void main() {
       expect(tester.takeException(), isNull);
 
       await tester.runAsync(() => iniciarSesionPrueba(container));
+      await tester.pump();
+      await tester.runAsync(() => container.read(walletProvider(1).future));
       await tester.pump();
       expect(find.text('S/ 0.00'), findsOneWidget);
       expect(campana, findsOneWidget);

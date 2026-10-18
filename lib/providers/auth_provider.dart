@@ -4,12 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/http/error_autenticacion.dart';
 import '../core/http/error_carrito.dart';
+import '../core/http/error_billetera.dart';
 import '../models/estado_autenticacion.dart';
 import '../models/dto/autenticacion_api_dto.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/api_auth_repository.dart';
 import '../services/pedido_service.dart';
-import '../services/saldo_service.dart';
 import 'cliente_http_provider.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>(
@@ -26,6 +26,9 @@ class AuthNotifier extends Notifier<EstadoAutenticacion> {
   Timer? _caducidad;
   int _generacion = 0;
 
+  /// Identidad efímera de sesión, sin exponer la credencial.
+  int get revisionSesion => _generacion;
+
   @override
   EstadoAutenticacion build() {
     ref.onDispose(() {
@@ -38,7 +41,6 @@ class AuthNotifier extends Notifier<EstadoAutenticacion> {
 
   void _limpiarDemo() {
     PedidoService.instancia.limpiar();
-    SaldoService.instancia.limpiar();
   }
 
   void _limpiar({bool caducada = false, bool enProceso = false}) {
@@ -211,8 +213,8 @@ class AuthNotifier extends Notifier<EstadoAutenticacion> {
     } catch (error) {
       if (ref.mounted &&
           generacion == _generacion &&
-          error is ErrorCarrito &&
-          error.estadoHttp == 401) {
+          ((error is ErrorCarrito && error.estadoHttp == 401) ||
+              (error is ErrorBilletera && error.estadoHttp == 401))) {
         _limpiar(caducada: true);
       }
       rethrow;

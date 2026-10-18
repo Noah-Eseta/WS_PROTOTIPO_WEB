@@ -8,7 +8,6 @@ import 'package:prototipo_app/models/usuario_autenticado.dart';
 import 'package:prototipo_app/providers/carrito_provider.dart';
 import 'package:prototipo_app/services/producto_service.dart';
 import 'package:prototipo_app/services/pedido_service.dart';
-import 'package:prototipo_app/services/saldo_service.dart';
 
 import 'support/auth_test_repository.dart';
 
@@ -20,6 +19,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+        walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
         authRepositoryProvider.overrideWithValue(repo),
       ],
     );
@@ -133,13 +133,17 @@ void main() {
         sesionIniciada: true,
         vaciarCarrito: () {},
       );
-      SaldoService.instancia.recargar(centimos: 1200, metodoPago: 'Yape');
+      final wallet =
+          container.read(walletRepositoryProvider) as WalletTestRepository;
+      wallet.saldos[1] = 1200;
+      expect((await container.read(walletProvider(1).future))!.centimos, 1200);
       await container.read(authProvider.notifier).cerrarSesion();
       expect(repo.salidas, 1);
       expect(container.read(authProvider).iniciada, isFalse);
       expect(container.read(carritoProvider).remotos, isEmpty);
       expect(snapshot.cantidadTotal, 2);
-      expect(SaldoService.instancia.centimos, 0);
+      expect(await container.read(walletProvider(1).future), isNull);
+      expect(wallet.saldos[1], 1200);
       expect(PedidoService.instancia.pedidos, isEmpty);
       repo.usuario = const UsuarioAutenticado(
         id: 2,
@@ -174,6 +178,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+          walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
           authRepositoryProvider.overrideWithValue(repo),
           relojAuthProvider.overrideWithValue(() => now),
         ],
@@ -232,6 +237,7 @@ void main() {
       container = ProviderContainer(
         overrides: [
           cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+          walletRepositoryProvider.overrideWithValue(WalletTestRepository()),
           authRepositoryProvider.overrideWithValue(repo),
         ],
       );

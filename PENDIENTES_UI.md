@@ -1,5 +1,33 @@
 # Pendientes visuales de Home
 
+## Integración de billetera ficticia persistente (18/10/2026)
+
+La nueva billetera y el formulario administrativo se comprueban mediante widget
+tests en 360, 390, 600, 768, 1024 y 1440 px, con el tema existente. La tarjeta de
+SaldoScreen conserva 210 px de alto, ancho máximo de pantalla de 720 px, padding,
+imagen, colores y estilo base de importe de 37 px. Se reutiliza FittedBox con
+scaleDown, ya presente en las tarjetas del perfil, para mostrar completo el importe
+máximo de S/1,000,000 cuando no cabe al ancho disponible. No se reduce arbitrariamente
+el tamaño base de la fuente. El texto de la tarjeta dice «SALDO FICTICIO» y el
+encabezado «Saldo de demostración»; no se presenta como dinero real.
+
+Los cambios funcionales sustituyen la autorrecarga y los proveedores simulados
+por saldo remoto, movimientos y asignación administrativa. El historial declara
+el alcance de los datos paginados. No se modifican Home, catálogo, detalles,
+carrito ni pago. El archivo `home_alignment_test.dart` permanece intacto y sigue
+notificando el overflow preexistente de 6 px; no se ignoran sus excepciones.
+Las comprobaciones de widget no equivalen a pruebas en un teléfono físico.
+
+La suite de esta integración finaliza con 344 pruebas aprobadas y el único fallo
+conocido de Home. Las tres métricas de PerfilSaldo conservan sus componentes y
+estilos; ahora indican el alcance parcial de las páginas cargadas y muestran
+carga/error cuando no hay datos confirmados. Brave headless comprobó el recorrido
+público en los seis anchos sin excepciones de ejecución; la consulta autenticada
+de billetera se verificó con repositorios aislados en widget tests, sin créditos
+automáticos en Railway. No había un dispositivo Android conectado.
+
+La integración conserva los pendientes históricos descritos a continuación.
+
 Última comprobación: 17 de octubre de 2026, al completar la separación del catálogo.
 
 El usuario revisó la tienda y decidió aplazar los desbordamientos menores que no

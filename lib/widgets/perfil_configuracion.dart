@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/formato.dart';
 import '../services/pedido_service.dart';
-import '../services/saldo_service.dart';
+import '../models/billetera.dart';
 import 'perfil_componentes.dart';
 
 const _violetaCuenta = Color(0xFFA986FF);
@@ -325,7 +325,7 @@ enum _TipoAviso { todos, compra, recarga }
 
 class PerfilNotificaciones extends StatefulWidget {
   final List<PedidoDemo> pedidos;
-  final List<RecargaDemo> recargas;
+  final List<MovimientoBilletera> recargas;
   final VoidCallback onCompras;
   final VoidCallback onSaldo;
   final VoidCallback onTienda;
@@ -353,15 +353,15 @@ class _PerfilNotificacionesState extends State<PerfilNotificaciones> {
         fecha: pedido.fecha,
         titulo: '¡Gracias por tu pedido!',
         descripcion:
-            'Tu pedido #${pedido.numero} por ${formatoPrecio(pedido.total)} ya está registrado. Revisa los detalles en Compras.',
+            'Tu pedido #${pedido.numero} por ${formatoPrecio(pedido.total)} es una simulación local, sin descuento de billetera. Revisa los detalles en Compras.',
       ),
     for (final recarga in widget.recargas)
       _AvisoPerfil(
         tipo: _TipoAviso.recarga,
         fecha: recarga.fecha,
-        titulo: 'Saldo agregado a tu billetera',
+        titulo: recarga.titulo,
         descripcion:
-            'Agregaste ${formatoPrecio(recarga.centimos / 100)} con ${recarga.metodoPago}. Consulta tu saldo y tus recargas.',
+            '${formatoCentimos(recarga.centimos)} · ${recarga.descripcion}. Saldo ficticio.',
       ),
   ]..sort((a, b) => b.fecha.compareTo(a.fecha));
 
@@ -530,7 +530,7 @@ class _PerfilNotificacionesState extends State<PerfilNotificaciones> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     PerfilEtiqueta(
-                      texto: compra ? 'COMPRA' : 'BILLETERA',
+                      texto: compra ? 'COMPRA' : 'BILLETERA FICTICIA',
                       color: color,
                     ),
                     Text(

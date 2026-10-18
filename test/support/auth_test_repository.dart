@@ -1,3 +1,4 @@
+export 'wallet_test_repository.dart';
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';

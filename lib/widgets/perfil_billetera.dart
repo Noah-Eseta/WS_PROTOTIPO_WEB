@@ -3,20 +3,24 @@ import 'package:flutter/material.dart';
 import '../core/app_theme.dart';
 import '../core/formato.dart';
 import '../services/pedido_service.dart';
-import '../services/saldo_service.dart';
+import '../models/billetera.dart';
 import 'perfil_componentes.dart';
 
 const _verdeMovimiento = Color(0xFF53D9B0);
 
 class PerfilSaldo extends StatelessWidget {
   final double saldo;
-  final List<RecargaDemo> recargas;
+  final bool mostrarHistorial;
+  final List<MovimientoBilletera>? recargas;
+  final bool historialConError;
   final VoidCallback onAgregarSaldo;
   final VoidCallback onTransacciones;
 
   const PerfilSaldo({
     super.key,
     required this.saldo,
+    this.mostrarHistorial = true,
+    this.historialConError = false,
     required this.recargas,
     required this.onAgregarSaldo,
     required this.onTransacciones,
@@ -24,8 +28,11 @@ class PerfilSaldo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ordenadas = [...recargas]..sort((a, b) => b.fecha.compareTo(a.fecha));
-    final total = recargas.fold<int>(
+    final registros = recargas ?? const <MovimientoBilletera>[];
+    final pendiente = historialConError ? 'Error de historial' : 'Cargando…';
+    final ordenadas = [...registros]
+      ..sort((a, b) => b.fecha.compareTo(a.fecha));
+    final total = registros.fold<int>(
       0,
       (suma, recarga) => suma + recarga.centimos,
     );
@@ -35,7 +42,7 @@ class PerfilSaldo extends StatelessWidget {
       children: [
         const PerfilEncabezado(
           titulo: 'Mi saldo',
-          descripcion: 'Saldo y recargas de demostración de esta sesión; no son fondos reales.',
+          descripcion: 'Saldo ficticio en PEN guardado en tu cuenta. No representa dinero real.',
           icono: Icons.account_balance_wallet_outlined,
           etiqueta: 'BILLETERA',
         ),
@@ -44,67 +51,71 @@ class PerfilSaldo extends StatelessWidget {
         PerfilMetricas(
           children: [
             PerfilMetrica(
-              titulo: 'Total recargado',
-              valor: formatoPrecio(total / 100),
-              detalle: 'Importe de todas tus recargas',
+              titulo: 'Importe cargado',
+              valor: recargas == null ? pendiente : formatoCentimos(total),
+              detalle: 'Solo los movimientos cargados',
               icono: Icons.savings_outlined,
               color: _verdeMovimiento,
             ),
             PerfilMetrica(
-              titulo: 'Recargas realizadas',
-              valor: '${recargas.length}',
-              detalle: 'Movimientos de tu billetera',
+              titulo: 'Movimientos cargados',
+              valor: recargas == null ? pendiente : '${registros.length}',
+              detalle: 'No es el total histórico',
               icono: Icons.add_card_outlined,
             ),
             PerfilMetrica(
-              titulo: 'Última recarga',
-              valor: ordenadas.isEmpty
+              titulo: 'Último movimiento',
+              valor: recargas == null
+                  ? pendiente
+                  : ordenadas.isEmpty
                   ? 'Sin recargas'
                   : _fecha(ordenadas.first.fecha),
               detalle: ordenadas.isEmpty
-                  ? 'Empieza agregando saldo'
-                  : 'Con ${ordenadas.first.metodoPago}',
+                  ? 'Sin créditos ficticios'
+                  : ordenadas.first.descripcion,
               icono: Icons.schedule_outlined,
               color: const Color(0xFFA78BFA),
             ),
           ],
         ),
         const SizedBox(height: 24),
-        PerfilPanel(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _TituloHistorial(
-                titulo: 'Historial de recargas',
-                descripcion: 'Consulta los ingresos de tu billetera.',
-                cantidad: recargas.length,
-                icono: Icons.history_rounded,
-              ),
-              const SizedBox(height: 20),
-              const Divider(height: 1, color: PerfilEstilo.borde),
-              if (ordenadas.isEmpty)
-                PerfilVacio(
-                  icono: Icons.account_balance_wallet_outlined,
-                  titulo: 'Dale vida a tu billetera',
-                  descripcion: 'Agrega saldo y consulta aquí el detalle de tus recargas.',
-                  accion: FilledButton.icon(
-                    onPressed: onAgregarSaldo,
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Agregar saldo'),
-                  ),
-                )
-              else
-                for (var i = 0; i < ordenadas.length; i++) ...[
-                  _FilaMovimiento(
-                    movimiento: _Movimiento.recarga(ordenadas[i]),
-                  ),
-                  if (i < ordenadas.length - 1)
-                    const Divider(height: 1, color: PerfilEstilo.borde),
-                ],
-            ],
+        if (mostrarHistorial) ...[
+          PerfilPanel(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _TituloHistorial(
+                  titulo: 'Historial de billetera',
+                  descripcion: 'Consulta los ingresos de tu billetera.',
+                  cantidad: registros.length,
+                  icono: Icons.history_rounded,
+                ),
+                const SizedBox(height: 20),
+                const Divider(height: 1, color: PerfilEstilo.borde),
+                if (ordenadas.isEmpty)
+                  PerfilVacio(
+                    icono: Icons.account_balance_wallet_outlined,
+                    titulo: 'Dale vida a tu billetera',
+                    descripcion: 'Los créditos ficticios aparecerán aquí al ser asignados por un administrador.',
+                    accion: FilledButton.icon(
+                      onPressed: onAgregarSaldo,
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Ver mi billetera'),
+                    ),
+                  )
+                else
+                  for (var i = 0; i < ordenadas.length; i++) ...[
+                    _FilaMovimiento(
+                      movimiento: _Movimiento.recarga(ordenadas[i]),
+                    ),
+                    if (i < ordenadas.length - 1)
+                      const Divider(height: 1, color: PerfilEstilo.borde),
+                  ],
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -158,7 +169,7 @@ class PerfilSaldo extends StatelessWidget {
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'SALDO DISPONIBLE',
+                            'SALDO DE DEMOSTRACIÓN',
                             style: TextStyle(
                               color: PerfilEstilo.textoSuave,
                               fontSize: 12,
@@ -185,7 +196,7 @@ class PerfilSaldo extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'Gestiona tus recargas de forma sencilla.',
+                      'Créditos ficticios asignados por un administrador.',
                       style: TextStyle(
                         color: PerfilEstilo.textoSuave,
                         fontSize: 14,
@@ -199,7 +210,7 @@ class PerfilSaldo extends StatelessWidget {
                         FilledButton.icon(
                           onPressed: onAgregarSaldo,
                           icon: const Icon(Icons.add_rounded),
-                          label: const Text('Agregar saldo'),
+                          label: const Text('Ver mi billetera'),
                         ),
                         OutlinedButton.icon(
                           onPressed: onTransacciones,
@@ -231,7 +242,7 @@ enum _FiltroMovimiento { todos, compras, recargas }
 
 class PerfilTransacciones extends StatefulWidget {
   final List<PedidoDemo> pedidos;
-  final List<RecargaDemo> recargas;
+  final List<MovimientoBilletera> recargas;
   final VoidCallback onAgregarSaldo;
   final VoidCallback onTienda;
 
@@ -272,20 +283,20 @@ class _PerfilTransaccionesState extends State<PerfilTransacciones> {
       children: [
         const PerfilEncabezado(
           titulo: 'Transacciones',
-          descripcion: 'Compras y recargas de demostración; no son movimientos reales de tu cuenta.',
+          descripcion: 'Los pedidos son simulaciones locales y no descuentan saldo. Los movimientos de billetera son ficticios y persistentes.',
           icono: Icons.receipt_long_outlined,
           etiqueta: 'BILLETERA',
         ),
         PerfilMetricas(
           children: [
             PerfilMetrica(
-              titulo: 'Total en compras',
+              titulo: 'Compras simuladas',
               valor: formatoPrecio(totalCompras),
               detalle: '${widget.pedidos.length} pedido(s) realizados',
               icono: Icons.shopping_bag_outlined,
             ),
             PerfilMetrica(
-              titulo: 'Total en recargas',
+              titulo: 'Importe cargado',
               valor: formatoPrecio(totalRecargas / 100),
               detalle: '${widget.recargas.length} recarga(s) realizadas',
               icono: Icons.account_balance_wallet_outlined,
@@ -294,7 +305,7 @@ class _PerfilTransaccionesState extends State<PerfilTransacciones> {
             PerfilMetrica(
               titulo: 'Movimientos',
               valor: '${widget.pedidos.length + widget.recargas.length}',
-              detalle: 'Toda la actividad de tu cuenta',
+              detalle: 'Solo los movimientos cargados',
               icono: Icons.swap_horiz_rounded,
               color: const Color(0xFFA78BFA),
             ),
@@ -329,7 +340,7 @@ class _PerfilTransaccionesState extends State<PerfilTransacciones> {
                   ),
                   _chip(
                     _FiltroMovimiento.recargas,
-                    'Recargas',
+                    'Billetera',
                     widget.recargas.length,
                   ),
                 ],
@@ -417,7 +428,7 @@ class _PerfilTransaccionesState extends State<PerfilTransacciones> {
             FilledButton.icon(
               onPressed: widget.onAgregarSaldo,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Agregar saldo'),
+              label: const Text('Ver mi billetera'),
             ),
           if (!recargas)
             OutlinedButton.icon(
@@ -492,10 +503,10 @@ class _Movimiento {
       importe = pedido.total,
       esRecarga = false;
 
-  _Movimiento.recarga(RecargaDemo recarga)
-    : titulo = 'Recarga de saldo',
-      detalle = 'Ingreso a tu billetera',
-      metodoPago = recarga.metodoPago,
+  _Movimiento.recarga(MovimientoBilletera recarga)
+    : titulo = recarga.titulo,
+      detalle = recarga.descripcion,
+      metodoPago = recarga.descripcion,
       fecha = recarga.fecha,
       importe = recarga.centimos / 100,
       esRecarga = true;
@@ -510,7 +521,7 @@ class _FilaMovimiento extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = movimiento.esRecarga ? _verdeMovimiento : AppColors.acento;
     final importe = Text(
-      '${movimiento.esRecarga ? '+ ' : ''}${formatoPrecio(movimiento.importe)}',
+      '${movimiento.esRecarga && movimiento.importe > 0 ? '+ ' : ''}${formatoPrecio(movimiento.importe)}',
       style: TextStyle(
         color: movimiento.esRecarga ? _verdeMovimiento : Colors.white,
         fontSize: 18,
