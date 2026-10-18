@@ -17,6 +17,7 @@ void main() {
   setUp(
     () => container = ProviderContainer(
       overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
       ],
     ),

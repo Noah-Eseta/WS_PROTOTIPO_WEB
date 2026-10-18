@@ -16,6 +16,7 @@ void main() {
   setUp(
     () => container = ProviderContainer(
       overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
       ],
     ),
@@ -77,7 +78,7 @@ void main() {
   });
 
   testWidgets(
-    'En móvil la cabecera oculta saldo, notificaciones y carrito sin sesión',
+    'En móvil el visitante conserva acceso al carrito; saldo y avisos son privados',
     (tester) async {
       tester.view.physicalSize = const Size(320, 800);
       tester.view.devicePixelRatio = 1;
@@ -112,7 +113,7 @@ void main() {
         matching: find.byType(IconButton),
       );
       expect(campana, findsNothing);
-      expect(find.byIcon(Icons.shopping_cart_outlined), findsNothing);
+      expect(find.byIcon(Icons.shopping_cart_outlined), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await tester.runAsync(() => iniciarSesionPrueba(container));
@@ -141,7 +142,7 @@ void main() {
       expect(find.byType(VentanaNotificaciones), findsNothing);
       expect(find.text('S/ 0.00'), findsNothing);
       expect(campana, findsNothing);
-      expect(find.byIcon(Icons.shopping_cart_outlined), findsNothing);
+      expect(find.byIcon(Icons.shopping_cart_outlined), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

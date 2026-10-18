@@ -11,6 +11,7 @@ import '../models/estado_carrito.dart';
 import '../services/pedido_service.dart';
 import '../widgets/pantalla_carga.dart';
 import '../widgets/pie_tienda.dart';
+import '../widgets/carrito/estado_sincronizacion_carrito.dart';
 import 'perfil_screen.dart';
 
 const _fondoPanel = Color(0xFF101D30);
@@ -25,6 +26,7 @@ class PagoScreen extends ConsumerStatefulWidget {
 
 class _PagoScreenState extends ConsumerState<PagoScreen> {
   String? _metodo;
+  bool _registrando = false;
 
   @override
   void initState() {
@@ -35,22 +37,43 @@ class _PagoScreenState extends ConsumerState<PagoScreen> {
   }
 
   Future<void> _pagar() async {
-    if (_metodo == null || ref.read(carritoProvider).vacio) return;
-    if (!await solicitarSesionParaComprar(context) || !mounted) return;
-    final pedido = PedidoService.instancia.registrar(
-      ref.read(carritoProvider),
-      _metodo!,
-      sesionIniciada: ref.read(authProvider.notifier).verificarVigencia(),
-      vaciarCarrito: ref.read(carritoProvider.notifier).vaciar,
-    );
-    Navigator.of(context).pushReplacement(
-      RutaConCarga(
-        destino: ConfirmacionPedidoScreen(
-          pedido: pedido,
-          usuarioId: ref.read(authProvider).usuario!.id,
+    final metodo = _metodo;
+    final usuario = ref.read(authProvider).usuario?.id;
+    if (_registrando || metodo == null || ref.read(carritoProvider).vacio) {
+      return;
+    }
+    setState(() => _registrando = true);
+    try {
+      if (!await solicitarSesionParaComprar(context) || !mounted) return;
+      if (ref.read(authProvider).usuario?.id != usuario) return;
+      final instantanea = ref.read(carritoProvider);
+      if (!instantanea.puedeSimular) return;
+      final pedido = PedidoService.instancia.registrar(
+        instantanea,
+        metodo,
+        sesionIniciada: ref.read(authProvider.notifier).verificarVigencia(),
+        vaciarCarrito: () => ref
+            .read(carritoProvider.notifier)
+            .consumirDemostracion(instantanea),
+      );
+      Navigator.of(context).pushReplacement(
+        RutaConCarga(
+          destino: ConfirmacionPedidoScreen(pedido: pedido, usuarioId: usuario),
         ),
-      ),
-    );
+      );
+    } on StateError {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se completó la simulación. Tus selecciones se conservan.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _registrando = false);
+    }
   }
 
   IconData _icono(String metodo) => switch (metodo) {
@@ -186,6 +209,7 @@ class _PagoScreenState extends ConsumerState<PagoScreen> {
           ],
         ),
         const SizedBox(height: 22),
+        const EstadoSincronizacionCarrito(),
         _fila('Productos', '${carrito.cantidadTotal}'),
         const SizedBox(height: 14),
         _fila('Subtotal', formatoPrecio(carrito.total)),
@@ -215,7 +239,9 @@ class _PagoScreenState extends ConsumerState<PagoScreen> {
         ),
         const SizedBox(height: 24),
         FilledButton.icon(
-          onPressed: _metodo == null || carrito.vacio ? null : _pagar,
+          onPressed: _registrando || _metodo == null || !carrito.puedeSimular
+              ? null
+              : _pagar,
           icon: const Icon(Icons.lock_outline_rounded, size: 19),
           label: const Text('Confirmar pedido'),
         ),
@@ -231,7 +257,7 @@ class _PagoScreenState extends ConsumerState<PagoScreen> {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Esta es una simulación. No se realizará ningún cobro.',
+                'Simulación local: no se realizará ningún cobro ni se eliminarán productos de tu cuenta.',
                 style: TextStyle(
                   color: AppColors.textoSecundario,
                   fontSize: 12,
@@ -408,7 +434,7 @@ class ConfirmacionPedidoScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 26),
                       const Text(
-                        '¡Gracias por tu pedido!',
+                        '¡Simulación registrada!',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 29,
@@ -417,7 +443,7 @@ class ConfirmacionPedidoScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       const Text(
-                        'Pedido de demostración registrado en esta sesión. No se realizó ningún cobro.',
+                        'Demostración registrada en esta sesión. Los productos persistentes permanecen en tu cuenta.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.textoSecundario,

@@ -28,7 +28,10 @@ void main() {
   setUp(() {
     repo = AuthTestRepository();
     container = ProviderContainer(
-      overrides: [authRepositoryProvider.overrideWithValue(repo)],
+      overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+        authRepositoryProvider.overrideWithValue(repo),
+      ],
     );
   });
   tearDown(() => container.dispose());
@@ -113,7 +116,7 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(find.text('Contenido privado'), findsOneWidget);
-      expect(container.read(carritoProvider), same(cart));
+      expect(container.read(carritoProvider).items, cart.items);
       await container.read(authProvider.notifier).cerrarSesion();
       await tester.pump();
       expect(find.byType(LoginScreen), findsOneWidget);
@@ -225,8 +228,8 @@ void main() {
       await tester.runAsync(() => iniciarSesionPrueba(container));
       final products = await ProductoService().obtenerProductos();
       final cart = container.read(carritoProvider.notifier);
-      cart.agregar(products.firstWhere((p) => p.disponible));
-      cart.agregar(products.firstWhere((p) => p.disponible));
+      await cart.agregar(products.firstWhere((p) => p.disponible));
+      await cart.agregar(products.firstWhere((p) => p.disponible));
       final snapshot = container.read(carritoProvider);
       await mount(
         tester,
@@ -267,7 +270,14 @@ void main() {
       Navigator.of(tester.element(find.byType(PerfilScreen))).pop();
       await tester.pumpAndSettle();
       expect(container.read(authProvider).usuario!.id, 9);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
+      expect(
+        container.read(carritoProvider).totalCentimos,
+        snapshot.totalCentimos,
+      );
       expect(snapshot.cantidadTotal, 2);
     },
   );
@@ -288,7 +298,14 @@ void main() {
       await tester.pump();
       expect(find.byType(LoginScreen), findsOneWidget);
       expect(find.textContaining('Tu sesión ha caducado'), findsOneWidget);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
+      expect(
+        container.read(carritoProvider).totalCentimos,
+        snapshot.totalCentimos,
+      );
     },
   );
 

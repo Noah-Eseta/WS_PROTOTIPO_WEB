@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/acceso_compra.dart';
 import '../../core/app_theme.dart';
 import '../../core/formato.dart';
 import '../../models/producto.dart';
@@ -145,9 +144,9 @@ class _DetalleRedesScreenState extends ConsumerState<DetalleRedesScreen> {
 
   Future<void> _agregar({required bool abrirCarrito}) async {
     if (!_listo) return;
-    if (!await solicitarSesionParaComprar(context) || !mounted) return;
     final servicio = _seleccionado!;
     final producto = Producto(
+      especial: true,
       nombre:
           '${p.nombre} · ${servicio.nombre} · $_cantidad · ${_enlace.text.trim()}',
       subtitulo: '$_cantidad ${servicio.categoria.toLowerCase()}',
@@ -159,7 +158,9 @@ class _DetalleRedesScreenState extends ConsumerState<DetalleRedesScreen> {
       logo: p.logo,
       banner: p.banner,
     );
-    ref.read(carritoProvider.notifier).agregar(producto);
+    final ok = await ref.read(carritoProvider.notifier).agregar(producto);
+    if (!mounted) return;
+    if (!ok) return;
     if (abrirCarrito) {
       Navigator.of(context).push(RutaConCarga(destino: const CarritoScreen()));
     } else {

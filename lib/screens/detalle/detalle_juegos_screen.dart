@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/acceso_compra.dart';
 import '../../core/app_theme.dart';
 import '../../core/formato.dart';
 import '../../models/producto.dart';
@@ -100,6 +99,7 @@ class _DetalleJuegosScreenState extends ConsumerState<DetalleJuegosScreen> {
     final paquete = _elegido;
     final detalle = _esFreeFire ? ' · ${paquete.nombre} ${paquete.tipo}' : '';
     return Producto(
+      especial: true,
       nombre:
           '${_nombreJuego.toUpperCase()}$detalle · ID ${_jugador.text.trim()}',
       subtitulo: paquete.tipo,
@@ -115,9 +115,10 @@ class _DetalleJuegosScreenState extends ConsumerState<DetalleJuegosScreen> {
 
   Future<void> _agregar({required bool abrirCarrito}) async {
     if (!_listo) return;
-    if (!await solicitarSesionParaComprar(context) || !mounted) return;
     final seleccionado = _productoParaCarrito();
-    ref.read(carritoProvider.notifier).agregar(seleccionado);
+    final ok = await ref.read(carritoProvider.notifier).agregar(seleccionado);
+    if (!mounted) return;
+    if (!ok) return;
     if (abrirCarrito) {
       Navigator.of(context).push(RutaConCarga(destino: const CarritoScreen()));
     } else {

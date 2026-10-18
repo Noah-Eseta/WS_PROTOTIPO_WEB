@@ -34,6 +34,7 @@ void main() {
   setUp(() async {
     container = ProviderContainer(
       overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
       ],
     );
@@ -179,7 +180,7 @@ void main() {
     await tester.tap(confirmar);
     await tester.pumpAndSettle();
     expect(find.byType(ConfirmacionPedidoScreen), findsOneWidget);
-    expect(find.text('¡Gracias por tu pedido!'), findsOneWidget);
+    expect(find.text('¡Simulación registrada!'), findsOneWidget);
     expect(pedidos.pedidos.length, anteriores + 1);
     expect(pedidos.pedidos.first.productos, ['CANVA PRO x2']);
     expect(pedidos.pedidos.first.total, 12);
@@ -251,7 +252,7 @@ void main() {
         expect(pedidos.pedidos.length, anteriores + 1);
         expect(pedidos.pedidos.first.total, snapshot.total);
         expect(estado().vacio, isFalse);
-        carrito.vaciar();
+        carrito.consumirDemostracion(snapshot);
       },
     );
     expect(estado().vacio, isTrue);

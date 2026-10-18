@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/app_theme.dart';
-import '../../core/acceso_compra.dart';
 import '../../core/formato.dart';
 import '../../models/producto.dart';
 import '../../providers/carrito_provider.dart';
@@ -67,14 +66,28 @@ class _DetalleProductoBaseState extends ConsumerState<DetalleProductoBase> {
   }
 
   Future<void> _agregar() async {
-    if (!await solicitarSesionParaComprar(context) || !mounted) return;
-    ref.read(carritoProvider.notifier).agregar(p);
+    final ok = await ref.read(carritoProvider.notifier).agregar(p);
+    if (!mounted) return;
+    if (!ok) {
+      _aviso(
+        ref.read(carritoProvider).error?.mensaje ??
+            'No se pudo agregar el producto.',
+      );
+      return;
+    }
     _aviso('${p.nombre} añadido al carrito');
   }
 
   Future<void> _comprarAhora() async {
-    if (!await solicitarSesionParaComprar(context) || !mounted) return;
-    ref.read(carritoProvider.notifier).agregar(p);
+    final ok = await ref.read(carritoProvider.notifier).agregar(p);
+    if (!mounted) return;
+    if (!ok) {
+      _aviso(
+        ref.read(carritoProvider).error?.mensaje ??
+            'No se pudo agregar el producto.',
+      );
+      return;
+    }
     Navigator.of(context).push(RutaConCarga(destino: const CarritoScreen()));
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/carrito_provider.dart';
 import '../../screens/login_screen.dart';
 
 class AccesoAutenticado extends ConsumerStatefulWidget {
@@ -88,12 +89,16 @@ class _ObservadorAutenticacionState
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       ref.read(authProvider.notifier).verificarVigencia();
+      if (!ref.read(carritoProvider).sincronizando) {
+        ref.read(carritoProvider.notifier).actualizar();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     ref.watch(authProvider);
+    ref.watch(carritoProvider);
     ref.listen(authProvider, (anterior, actual) {
       if (actual.caducada && !(anterior?.caducada ?? false)) {
         ScaffoldMessenger.of(context).showSnackBar(

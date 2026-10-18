@@ -5,7 +5,12 @@ import 'package:prototipo_app/models/dto/autenticacion_api_dto.dart';
 import 'package:prototipo_app/models/usuario_autenticado.dart';
 import 'package:prototipo_app/providers/auth_provider.dart';
 import 'package:prototipo_app/repositories/auth_repository.dart';
+import 'package:prototipo_app/providers/carrito_provider.dart';
 export 'package:prototipo_app/providers/auth_provider.dart';
+export 'package:prototipo_app/providers/carrito_provider.dart'
+    show cartRepositoryProvider;
+
+export 'cart_test_repository.dart';
 
 /// Repositorio exclusivo de pruebas; no verifica ni envía credenciales reales.
 class AuthTestRepository implements AuthRepository {
@@ -23,7 +28,7 @@ class AuthTestRepository implements AuthRepository {
 
   AutenticacionApiDto sesion() => AutenticacionApiDto(
     usuario: usuario,
-    token: 'credencial-ficticia-solo-pruebas',
+    token: 'credencial-fixture-${usuario.id}',
     expiraEn: reloj().add(vigencia),
   );
 
@@ -63,6 +68,13 @@ class AuthTestRepository implements AuthRepository {
   }
 }
 
-Future<bool> iniciarSesionPrueba(ProviderContainer container) => container
-    .read(authProvider.notifier)
-    .iniciarSesion(correo: 'fixture@example.test', password: 'entrada-no-real');
+Future<bool> iniciarSesionPrueba(ProviderContainer container) async {
+  final ok = await container
+      .read(authProvider.notifier)
+      .iniciarSesion(
+        correo: 'fixture@example.test',
+        password: 'entrada-no-real',
+      );
+  if (ok) await container.read(carritoProvider.notifier).actualizar();
+  return ok;
+}

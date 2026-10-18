@@ -18,7 +18,10 @@ void main() {
   setUp(() {
     repo = AuthTestRepository();
     container = ProviderContainer(
-      overrides: [authRepositoryProvider.overrideWithValue(repo)],
+      overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+        authRepositoryProvider.overrideWithValue(repo),
+      ],
     );
   });
   tearDown(() => container.dispose());
@@ -112,15 +115,18 @@ void main() {
     },
   );
   test(
-    'Logout revoca y conserva el carrito; limpia solo datos financieros demo',
+    'Logout revoca, oculta el carrito remoto y limpia datos financieros demo',
     () async {
       final productos = await ProductoService().obtenerProductos();
       final carrito = container.read(carritoProvider.notifier);
-      carrito.agregar(productos.firstWhere((p) => p.disponible));
-      carrito.agregar(productos.firstWhere((p) => p.disponible));
+      await carrito.agregar(productos.firstWhere((p) => p.disponible));
+      await carrito.agregar(productos.firstWhere((p) => p.disponible));
       final snapshot = container.read(carritoProvider);
       await iniciarSesionPrueba(container);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
       PedidoService.instancia.registrar(
         snapshot,
         'Yape',
@@ -131,7 +137,7 @@ void main() {
       await container.read(authProvider.notifier).cerrarSesion();
       expect(repo.salidas, 1);
       expect(container.read(authProvider).iniciada, isFalse);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(container.read(carritoProvider).remotos, isEmpty);
       expect(snapshot.cantidadTotal, 2);
       expect(SaldoService.instancia.centimos, 0);
       expect(PedidoService.instancia.pedidos, isEmpty);
@@ -142,7 +148,7 @@ void main() {
       );
       await iniciarSesionPrueba(container);
       expect(container.read(authProvider).usuario!.id, 2);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(container.read(carritoProvider).remotos, isEmpty);
       expect(PedidoService.instancia.pedidos, isEmpty);
     },
   );
@@ -159,28 +165,36 @@ void main() {
       );
     },
   );
-  test('Expiración por reloj al reanudar conserva el carrito', () async {
-    var now = DateTime.utc(2026);
-    container.dispose();
-    repo.reloj = () => now;
-    container = ProviderContainer(
-      overrides: [
-        authRepositoryProvider.overrideWithValue(repo),
-        relojAuthProvider.overrideWithValue(() => now),
-      ],
-    );
-    await iniciarSesionPrueba(container);
-    final products = await ProductoService().obtenerProductos();
-    final carrito = container.read(carritoProvider.notifier);
-    carrito.agregar(products.firstWhere((p) => p.disponible));
-    carrito.agregar(products.firstWhere((p) => p.disponible));
-    final snapshot = container.read(carritoProvider);
-    expect(snapshot.cantidadTotal, 2);
-    now = now.add(const Duration(minutes: 61));
-    expect(container.read(authProvider.notifier).verificarVigencia(), isFalse);
-    expect(container.read(authProvider).caducada, isTrue);
-    expect(container.read(carritoProvider), same(snapshot));
-  });
+  test(
+    'Expiración oculta la vista privada sin modificar la instantánea',
+    () async {
+      var now = DateTime.utc(2026);
+      container.dispose();
+      repo.reloj = () => now;
+      container = ProviderContainer(
+        overrides: [
+          cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+          authRepositoryProvider.overrideWithValue(repo),
+          relojAuthProvider.overrideWithValue(() => now),
+        ],
+      );
+      await iniciarSesionPrueba(container);
+      final products = await ProductoService().obtenerProductos();
+      final carrito = container.read(carritoProvider.notifier);
+      await carrito.agregar(products.firstWhere((p) => p.disponible));
+      await carrito.agregar(products.firstWhere((p) => p.disponible));
+      final snapshot = container.read(carritoProvider);
+      expect(snapshot.cantidadTotal, 2);
+      now = now.add(const Duration(minutes: 61));
+      expect(
+        container.read(authProvider.notifier).verificarVigencia(),
+        isFalse,
+      );
+      expect(container.read(authProvider).caducada, isTrue);
+      expect(container.read(carritoProvider).remotos, isEmpty);
+      expect(snapshot.cantidadTotal, 2);
+    },
+  );
   testWidgets('El temporizador caduca la sesión aunque no haya navegación', (
     tester,
   ) async {
@@ -216,7 +230,10 @@ void main() {
       final pending = iniciarSesionPrueba(container);
       container.dispose();
       container = ProviderContainer(
-        overrides: [authRepositoryProvider.overrideWithValue(repo)],
+        overrides: [
+          cartRepositoryProvider.overrideWithValue(CartTestRepository()),
+          authRepositoryProvider.overrideWithValue(repo),
+        ],
       );
       repo.pendiente!.complete(repo.sesion());
       expect(await pending, isFalse);

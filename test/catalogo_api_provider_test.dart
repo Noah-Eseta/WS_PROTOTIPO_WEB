@@ -32,6 +32,7 @@ void main() {
     adapter = DioTestAdapter((_) => respuestaJson(jsonCatalogoApi()));
     container = ProviderContainer(
       overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
         configuracionApiProvider.overrideWithValue(
           ConfiguracionApi(origen: 'api'),
@@ -62,6 +63,7 @@ void main() {
     () async {
       final local = ProviderContainer(
         overrides: [
+          cartRepositoryProvider.overrideWithValue(CartTestRepository()),
           authRepositoryProvider.overrideWithValue(AuthTestRepository()),
           clienteHttpProvider.overrideWith(
             (ref) => throw StateError('Mock no debe leer HTTP'),
@@ -134,12 +136,19 @@ void main() {
       );
       expect(container.read(clienteHttpProvider), same(cliente));
       expect(actualizado.cerrado, isFalse);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
+      expect(
+        container.read(carritoProvider).totalCentimos,
+        snapshot.totalCentimos,
+      );
       expect(snapshot.cantidadTotal, 2);
       expect(snapshot.total, 15.80);
-      carrito.cambiarCantidad('CANVA PRO', 1);
+      await carrito.cambiarCantidad(originales[3].id!, 1);
       expect(container.read(carritoProvider).cantidadTotal, 3);
-      carrito.quitar('CANVA PRO');
+      await carrito.quitar(originales[3].id!);
       expect(container.read(carritoProvider).vacio, isTrue);
     },
   );
@@ -221,7 +230,14 @@ void main() {
       await tester.tap(find.byIcon(Icons.shopping_cart_outlined));
       await tester.pumpAndSettle();
       expect(find.byType(CarritoScreen), findsOneWidget);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
+      expect(
+        container.read(carritoProvider).totalCentimos,
+        snapshot.totalCentimos,
+      );
       final continuar = find.widgetWithText(FilledButton, 'Continuar');
       await tester.ensureVisible(continuar);
       await tester.tap(continuar);
@@ -239,7 +255,11 @@ void main() {
       expect(PedidoService.instancia.pedidos.length, anteriores + 1);
       expect(PedidoService.instancia.pedidos.first.productos, ['CANVA PRO x2']);
       expect(PedidoService.instancia.pedidos.first.total, 15.80);
-      expect(container.read(carritoProvider).vacio, isTrue);
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
+      expect(container.read(carritoProvider).remotos, isNotEmpty);
       expect(snapshot.cantidadTotal, 2);
       expect(adapter.peticiones, hasLength(1));
       expect(tester.takeException(), isNull);

@@ -4,6 +4,7 @@ import '../producto.dart';
 
 /// Traduce el contrato remoto sin acoplar el modelo visual a HTTP o JSON.
 final class ProductoApiDto {
+  final String id;
   final String nombre;
   final String subtitulo;
   final String categoria;
@@ -18,6 +19,7 @@ final class ProductoApiDto {
   final String tipo;
 
   const ProductoApiDto._({
+    required this.id,
     required this.nombre,
     required this.subtitulo,
     required this.categoria,
@@ -47,6 +49,7 @@ final class ProductoApiDto {
       );
     }
     return ProductoApiDto._(
+      id: _uuid(valor),
       nombre: _texto(valor, 'name'),
       subtitulo: _texto(valor, 'subtitle'),
       categoria: _texto(valor, 'category'),
@@ -63,6 +66,7 @@ final class ProductoApiDto {
   }
 
   Producto toProducto() => Producto(
+    id: id,
     nombre: nombre,
     subtitulo: subtitulo,
     categoria: categoria,
@@ -85,6 +89,15 @@ final class ProductoApiDto {
       throw FormatException('Campo de texto inválido: $campo.');
     }
     return valor;
+  }
+
+  static String _uuid(Map<String, dynamic> json) {
+    final id = _texto(json, 'id');
+    if (!RegExp(r'^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$')
+        .hasMatch(id)) {
+      throw const FormatException('UUID de producto inválido.');
+    }
+    return id.toLowerCase();
   }
 
   static bool _booleano(Map<String, dynamic> json, String campo) {

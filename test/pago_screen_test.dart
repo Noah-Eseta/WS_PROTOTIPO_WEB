@@ -17,6 +17,7 @@ void main() {
   setUp(() async {
     container = ProviderContainer(
       overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
       ],
     );
@@ -39,7 +40,7 @@ void main() {
     tester,
   ) async {
     final carrito = container.read(carritoProvider.notifier);
-    carrito.vaciar();
+    await carrito.vaciar();
     carrito.agregar(producto);
     addTearDown(carrito.vaciar);
 
@@ -96,7 +97,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('¡Gracias por tu pedido!'), findsOneWidget);
+    expect(find.text('¡Simulación registrada!'), findsOneWidget);
     expect(find.text('Yape'), findsOneWidget);
     expect(find.text('S/ 6.00'), findsOneWidget);
     expect(tester.takeException(), isNull);

@@ -182,3 +182,38 @@ a extremo con una cuenta real y la ejecución física Android quedan pendientes.
 Validación final de autenticación: 55 pruebas nuevas aprobadas; 195 aprobadas en
 la suite completa y únicamente el fallo conocido de `home_alignment_test.dart`.
 El analizador no encuentra incidencias y `git diff --check` no detecta errores.
+
+## Integración del carrito persistente
+
+Se conserva intacto `test/home_alignment_test.dart`. La suite completa tiene
+255 pruebas aprobadas y el único fallo conocido por los dos overflows de 6 px.
+Las 60 pruebas nuevas del carrito pasan: HTTP, UUID, estado, concurrencia,
+fusiones, privacidad, simulaciones y presentación. No se ignoran errores de
+layout en las pruebas permanentes.
+
+El contenido de Home se comparó con su archivo anterior en 360 × 800,
+390 × 844, 600 × 960, 768 × 1024, 1024 × 768 y 1440 × 900. Coinciden geometría,
+imágenes, estilos, callbacks disponibles y errores. Ambos lados usan los
+componentes compartidos actuales; la cabecera incorpora el acceso al carrito
+para visitantes. Se conservan los overflows anteriores de 21, 2 y 6 px.
+Informe: `.dart_tool/cart_integration_audit/visual_report.json`.
+
+Los indicadores de cuenta, mezcla, fallo y reintento, y la pantalla de pago con
+productos persistentes y especiales, pasan las pruebas de los seis anchos sin
+nuevos overflows. Se mantienen los problemas móviles de la cabecera del carrito
+ya documentados; las pruebas funcionales de esa pantalla usan escritorio.
+Se añaden únicamente los indicadores necesarios de sincronización y procedencia,
+y textos que identifican el pago como simulación sin borrado remoto.
+
+La Web compilada para `/WS_PROTOTIPO_WEB/` funciona en Brave headless, con perfil
+aislado y seguridad normal: 34 productos reales, 11 no disponibles, recuperación
+tras un fallo del catálogo y respuestas JSON 401 de perfil y carrito con una
+credencial inválida. No hubo excepciones JavaScript ni datos en localStorage o
+sessionStorage. Los cinco preflights del carrito desde el origen de GitHub Pages
+admiten sus métodos y Authorization, Content-Type y X-Cart-Version. No se modifica
+el backend. Diagnósticos locales en `.dart_tool/cart_integration_audit/`.
+
+La comprobación autenticada entre dos dispositivos reales y la ejecución física
+Android siguen pendientes. Las pruebas de recuperación entre scopes usan un
+servidor local de pruebas compartido; no sustituyen esa validación en producción.
+No se han creado cuentas ni ejecutado mutaciones de carrito en Railway.

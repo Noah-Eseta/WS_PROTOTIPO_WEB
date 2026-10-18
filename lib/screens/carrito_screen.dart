@@ -8,6 +8,7 @@ import '../models/item_carrito.dart';
 import '../providers/carrito_provider.dart';
 import '../models/estado_carrito.dart';
 import '../widgets/imagen_producto.dart';
+import '../widgets/carrito/estado_sincronizacion_carrito.dart';
 import '../widgets/logo_marca.dart';
 import '../widgets/pantalla_base.dart';
 import '../widgets/pie_tienda.dart';
@@ -25,6 +26,25 @@ class CarritoScreen extends ConsumerStatefulWidget {
 }
 
 class _CarritoScreenState extends ConsumerState<CarritoScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !ref.read(carritoProvider).sincronizando) {
+        ref.read(carritoProvider.notifier).actualizar();
+      }
+    });
+  }
+
+  Future<void> _accion(Future<bool> Function() ejecutar) async {
+    final ok = await ejecutar();
+    if (!mounted || ok) return;
+    _aviso(
+      ref.read(carritoProvider).error?.mensaje ??
+          'No se pudo completar la operación.',
+    );
+  }
+
   void _aviso(String texto) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -76,6 +96,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                               ),
                             ),
                             const SizedBox(height: 22),
+                            const EstadoSincronizacionCarrito(),
                             if (carrito.vacio)
                               const _Vacio()
                             else if (ancha)
@@ -85,9 +106,15 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                                   Expanded(
                                     child: _Tabla(
                                       carrito: carrito,
-                                      onCambiarCantidad:
-                                          acciones.cambiarCantidad,
-                                      onQuitar: acciones.quitar,
+                                      onCambiarCantidad: (clave, delta) =>
+                                          _accion(
+                                            () => acciones.cambiarCantidad(
+                                              clave,
+                                              delta,
+                                            ),
+                                          ),
+                                      onQuitar: (clave) =>
+                                          _accion(() => acciones.quitar(clave)),
                                     ),
                                   ),
                                   const SizedBox(width: 20),
@@ -96,7 +123,7 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                                     child: _Resumen(
                                       carrito: carrito,
                                       onAviso: _aviso,
-                                      onVaciar: acciones.vaciar,
+                                      onVaciar: () => _accion(acciones.vaciar),
                                       onContinuar: _continuar,
                                     ),
                                   ),
@@ -105,14 +132,17 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
                             else ...[
                               _Tabla(
                                 carrito: carrito,
-                                onCambiarCantidad: acciones.cambiarCantidad,
-                                onQuitar: acciones.quitar,
+                                onCambiarCantidad: (clave, delta) => _accion(
+                                  () => acciones.cambiarCantidad(clave, delta),
+                                ),
+                                onQuitar: (clave) =>
+                                    _accion(() => acciones.quitar(clave)),
                               ),
                               const SizedBox(height: 16),
                               _Resumen(
                                 carrito: carrito,
                                 onAviso: _aviso,
-                                onVaciar: acciones.vaciar,
+                                onVaciar: () => _accion(acciones.vaciar),
                                 onContinuar: _continuar,
                               ),
                             ],
@@ -135,6 +165,10 @@ class _CarritoScreenState extends ConsumerState<CarritoScreen> {
   Future<void> _continuar() async {
     if (ref.read(carritoProvider).vacio) return;
     if (!await solicitarSesionParaComprar(context) || !mounted) return;
+    if (!ref.read(carritoProvider).puedeSimular) {
+      _aviso('Espera la sincronización y revisa los productos no disponibles.');
+      return;
+    }
     Navigator.of(context).push(RutaConCarga(destino: const PagoScreen()));
   }
 }
@@ -328,7 +362,13 @@ class _FilaItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  p.tipo.toUpperCase(),
+                  !p.disponible
+                      ? 'NO DISPONIBLE'
+                      : item.persistente
+                      ? 'GUARDADO EN TU CUENTA'
+                      : p.sincronizable
+                      ? 'SELECCIÓN DE VISITANTE'
+                      : 'DEMOSTRACIÓN LOCAL',
                   style: const TextStyle(
                     color: AppColors.textoSecundario,
                     fontSize: 10,
@@ -340,8 +380,7 @@ class _FilaItem extends StatelessWidget {
                     _BotonCantidad(
                       icono: Icons.remove,
                       tooltip: 'Disminuir',
-                      onPressed: () =>
-                          onCambiarCantidad(item.producto.nombre, -1),
+                      onPressed: () => onCambiarCantidad(item.clave, -1),
                     ),
                     SizedBox(
                       width: 34,
@@ -354,8 +393,7 @@ class _FilaItem extends StatelessWidget {
                     _BotonCantidad(
                       icono: Icons.add,
                       tooltip: 'Aumentar',
-                      onPressed: () =>
-                          onCambiarCantidad(item.producto.nombre, 1),
+                      onPressed: () => onCambiarCantidad(item.clave, 1),
                     ),
                   ],
                 ),
@@ -366,7 +404,7 @@ class _FilaItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                formatoPrecio(item.subtotal),
+                p.disponible ? formatoPrecio(item.subtotal) : 'No disponible',
                 style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 17,
@@ -394,7 +432,7 @@ class _FilaItem extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () => onQuitar(item.producto.nombre),
+                  onPressed: () => onQuitar(item.clave),
                   icon: const Icon(
                     Icons.delete_outline,
                     size: 17,
@@ -531,7 +569,7 @@ class _Resumen extends StatelessWidget {
             children: [
               Expanded(
                 child: FilledButton(
-                  onPressed: onContinuar,
+                  onPressed: carrito.puedeSimular ? onContinuar : null,
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -549,7 +587,7 @@ class _Resumen extends StatelessWidget {
                   width: 48,
                   height: 48,
                   child: IconButton(
-                    onPressed: onVaciar,
+                    onPressed: carrito.sincronizando ? null : onVaciar,
                     style: IconButton.styleFrom(
                       backgroundColor: _rojo.withValues(alpha: 0.1),
                       side: BorderSide(color: _rojo.withValues(alpha: 0.5)),

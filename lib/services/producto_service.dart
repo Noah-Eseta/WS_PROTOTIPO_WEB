@@ -13,6 +13,7 @@ class ProductoService implements CatalogoRepository {
 
   static const _datosDemo = <Producto>[
     Producto(
+      id: '39bf3c19-57ed-4075-9fda-9cc9286b836e',
       nombre: 'FREE FIRE +10%',
       subtitulo: 'DIAMANTES Y PAQUETES',
       categoria: 'Juegos',
@@ -24,6 +25,7 @@ class ProductoService implements CatalogoRepository {
       top: true,
     ),
     Producto(
+      id: '7e4baef4-1e23-43c6-95c9-a329cd34cebe',
       nombre: 'FREE FIRE · OFERTA LIMITADA',
       subtitulo: 'PASES, FRAGMENTOS Y CAJAS',
       categoria: 'Juegos',
@@ -35,6 +37,7 @@ class ProductoService implements CatalogoRepository {
       top: true,
     ),
     Producto(
+      id: '7f83f3f9-3734-4c9d-b21a-9b436a53df57',
       nombre: 'TIKTOK',
       subtitulo: 'SEGUIDORES, LIKES Y VISUALIZACIONES',
       categoria: 'Redes',
@@ -46,6 +49,7 @@ class ProductoService implements CatalogoRepository {
       top: true,
     ),
     Producto(
+      id: 'e753f48c-0b0c-4bbf-ae50-36194fd5fc05',
       nombre: 'CANVA PRO',
       subtitulo: 'ACTIVACIÓN A DOMINIO',
       categoria: 'Software',
@@ -58,6 +62,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 12.90,
     ),
     Producto(
+      id: 'e49afacd-27ca-40de-87c1-d3058981cd2e',
       nombre: 'INSTAGRAM',
       subtitulo: 'SEGUIDORES, LIKES Y VISUALIZACIONES',
       categoria: 'Redes',
@@ -69,6 +74,7 @@ class ProductoService implements CatalogoRepository {
       nuevo: true,
     ),
     Producto(
+      id: 'bae03869-c81c-4dc2-ae60-7829d63b4f99',
       nombre: 'ROBLOX',
       subtitulo: 'ROBUX · RECARGA MANUAL',
       categoria: 'Juegos',
@@ -79,6 +85,7 @@ class ProductoService implements CatalogoRepository {
       precio: 10.00,
     ),
     Producto(
+      id: '34fa3e4a-2729-4d9e-b46f-5568d9bd845c',
       nombre: 'YOUTUBE PREMIUM',
       subtitulo: 'SIN ANUNCIOS Y EN SEGUNDO PLANO',
       categoria: 'Streaming',
@@ -91,6 +98,7 @@ class ProductoService implements CatalogoRepository {
       nuevo: true,
     ),
     Producto(
+      id: 'd9737436-af4b-4c26-aaaf-ccf0b7faf394',
       nombre: 'MOBILE LEGENDS',
       subtitulo: 'DIAMANTES Y PASE SEMANAL',
       categoria: 'Juegos',
@@ -105,6 +113,7 @@ class ProductoService implements CatalogoRepository {
 
     // ── Streaming ──
     Producto(
+      id: 'aea6cb4b-4760-4932-b100-7e3b6dcca27b',
       nombre: 'PRIME VIDEO',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -117,6 +126,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 11.00,
     ),
     Producto(
+      id: '2adefc70-3156-439f-afa9-5c27a093dfc2',
       nombre: 'MAX PLATINO',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -129,6 +139,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 11.00,
     ),
     Producto(
+      id: 'e025be4c-3ad1-460e-97ea-f4545d720f8a',
       nombre: 'CRUNCHYROLL MEGA FAN',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -141,6 +152,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 11.00,
     ),
     Producto(
+      id: '34b5fc74-5925-4198-8c13-d899bca22a84',
       nombre: 'VIX PREMIUM',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -153,6 +165,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 8.50,
     ),
     Producto(
+      id: 'de19bfbd-b048-461b-88d7-883ea2abe76b',
       nombre: 'PARAMOUNT+',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -165,6 +178,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 11.00,
     ),
     Producto(
+      id: '6a192a44-b667-4850-828d-ca122777edf8',
       nombre: 'APPLE TV+',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -177,6 +191,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 11.00,
     ),
     Producto(
+      id: 'ca37f13c-d733-452d-aca8-6b23edd5be58',
       nombre: 'VIKI RAKUTEN',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -189,6 +204,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 10.00,
     ),
     Producto(
+      id: 'fa72918b-9fda-4992-8e58-4e908f427022',
       nombre: 'TIDAL FAMILIAR',
       subtitulo: 'ACCESO INDIVIDUAL',
       categoria: 'Streaming',
@@ -201,6 +217,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 15.00,
     ),
     Producto(
+      id: '1b73bf41-533b-44a5-867f-68dddeb361fe',
       nombre: 'NETFLIX',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -212,6 +229,7 @@ class ProductoService implements CatalogoRepository {
       top: true,
     ),
     Producto(
+      id: 'de63931b-82d2-410d-8a3e-461a41c6c36b',
       nombre: 'DISNEY+',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Streaming',
@@ -223,6 +241,7 @@ class ProductoService implements CatalogoRepository {
       top: true,
     ),
     Producto(
+      id: '16384124-5bce-421b-82ce-bbe91e64a02c',
       nombre: 'SPOTIFY',
       subtitulo: 'ACCESO INDIVIDUAL',
       categoria: 'Streaming',
@@ -233,6 +252,7 @@ class ProductoService implements CatalogoRepository {
       tipo: '90 días',
     ),
     Producto(
+      id: 'a52f74b1-e96d-4b84-86d2-dc1e793e553e',
       nombre: 'DEEZER',
       subtitulo: 'ACCESO INDIVIDUAL',
       categoria: 'Streaming',
@@ -245,6 +265,7 @@ class ProductoService implements CatalogoRepository {
 
     // ── Software ──
     Producto(
+      id: '5f63b8cb-eccf-47d7-9567-13bcc6276346',
       nombre: 'CHATGPT PLUS',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Software',
@@ -258,6 +279,7 @@ class ProductoService implements CatalogoRepository {
       top: true,
     ),
     Producto(
+      id: 'd52e8f47-a4c7-46db-a725-84d947b2916f',
       nombre: 'CAPCUT PRO',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Software',
@@ -271,6 +293,7 @@ class ProductoService implements CatalogoRepository {
       nuevo: true,
     ),
     Producto(
+      id: 'a10fde2b-53e2-47ec-94c9-dbd466ed6acc',
       nombre: 'GOOGLE ONE',
       subtitulo: 'ACTIVACIÓN A DOMINIO',
       categoria: 'Software',
@@ -284,6 +307,7 @@ class ProductoService implements CatalogoRepository {
       nuevo: true,
     ),
     Producto(
+      id: '13e959c3-f273-4550-a2b2-aa6342a99210',
       nombre: 'LEONARDO AI',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Software',
@@ -297,6 +321,7 @@ class ProductoService implements CatalogoRepository {
       nuevo: true,
     ),
     Producto(
+      id: '5f8b61a1-e219-438b-97d6-1e5f56eb29b7',
       nombre: 'MICROSOFT OFFICE',
       subtitulo: 'ACTIVACIÓN A DOMINIO',
       categoria: 'Software',
@@ -309,6 +334,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 34.00,
     ),
     Producto(
+      id: 'db8a5eb2-d107-428b-a361-d7631550c329',
       nombre: 'NORDVPN',
       subtitulo: 'ACCESO COMPARTIDO',
       categoria: 'Software',
@@ -321,6 +347,7 @@ class ProductoService implements CatalogoRepository {
       precioAntes: 24.90,
     ),
     Producto(
+      id: '41713866-f75f-4e6c-af1e-59ca567b34ac',
       nombre: 'KASPERSKY PREMIUM + VPN',
       subtitulo: 'ACTIVACIÓN A DOMINIO',
       categoria: 'Software',
@@ -335,6 +362,7 @@ class ProductoService implements CatalogoRepository {
 
     // ── Juegos ──
     Producto(
+      id: '2d3c04ad-27bb-409a-b44f-5fd9449baa05',
       nombre: 'PUBG MOBILE',
       subtitulo: 'UC Y PAQUETES',
       categoria: 'Juegos',
@@ -344,6 +372,7 @@ class ProductoService implements CatalogoRepository {
       entrega: 'Automática',
     ),
     Producto(
+      id: 'cc48c115-7999-48c6-b075-2617a50049e5',
       nombre: 'BLOOD STRIKE',
       subtitulo: 'GOLD Y PAQUETES',
       categoria: 'Juegos',
@@ -353,6 +382,7 @@ class ProductoService implements CatalogoRepository {
       entrega: 'Automática',
     ),
     Producto(
+      id: '74de3eea-c384-4710-bbb4-dd491347a486',
       nombre: 'DELTA FORCE',
       subtitulo: 'MONEDAS Y PAQUETES',
       categoria: 'Juegos',
@@ -362,6 +392,7 @@ class ProductoService implements CatalogoRepository {
       entrega: 'Automática',
     ),
     Producto(
+      id: '266d0b44-5757-42fe-b401-d5b89f5ec587',
       nombre: 'ARENA BREAKOUT',
       subtitulo: 'BONOS Y PAQUETES',
       categoria: 'Juegos',
@@ -372,6 +403,7 @@ class ProductoService implements CatalogoRepository {
       entrega: 'Automática',
     ),
     Producto(
+      id: 'efd059e5-275b-4e11-b572-53ad9aa403ba',
       nombre: 'FARLIGHT 84',
       subtitulo: 'DIAMANTES Y PAQUETES',
       categoria: 'Juegos',
@@ -383,6 +415,7 @@ class ProductoService implements CatalogoRepository {
 
     // ── Redes ──
     Producto(
+      id: 'b1d018a9-af49-4bdb-b85b-807167d63d6e',
       nombre: 'FACEBOOK',
       subtitulo: 'SEGUIDORES, LIKES Y VISUALIZACIONES',
       categoria: 'Redes',
@@ -392,6 +425,7 @@ class ProductoService implements CatalogoRepository {
       entrega: '72 horas',
     ),
     Producto(
+      id: '2ee93328-d9b6-4fa2-9598-bbf1ec8f8c22',
       nombre: 'YOUTUBE',
       subtitulo: 'SEGUIDORES, LIKES Y VISUALIZACIONES',
       categoria: 'Redes',

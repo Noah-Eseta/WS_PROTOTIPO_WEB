@@ -42,6 +42,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     container = ProviderContainer(
       overrides: [
+        cartRepositoryProvider.overrideWithValue(CartTestRepository()),
         authRepositoryProvider.overrideWithValue(AuthTestRepository()),
         catalogoRepositoryProvider.overrideWithValue(repositorio),
       ],
@@ -229,7 +230,14 @@ void main() {
       await tester.tap(find.byIcon(Icons.shopping_cart_outlined));
       await tester.pumpAndSettle();
       expect(find.byType(CarritoScreen), findsOneWidget);
-      expect(container.read(carritoProvider), same(snapshot));
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
+      expect(
+        container.read(carritoProvider).totalCentimos,
+        snapshot.totalCentimos,
+      );
       final continuar = find.widgetWithText(FilledButton, 'Continuar');
       await tester.ensureVisible(continuar);
       await tester.tap(continuar);
@@ -247,7 +255,11 @@ void main() {
       expect(PedidoService.instancia.pedidos.length, anteriores + 1);
       expect(PedidoService.instancia.pedidos.first.productos, ['CANVA PRO x1']);
       expect(PedidoService.instancia.pedidos.first.total, 7.90);
-      expect(container.read(carritoProvider).vacio, isTrue);
+      expect(
+        container.read(carritoProvider).cantidadTotal,
+        snapshot.cantidadTotal,
+      );
+      expect(container.read(carritoProvider).remotos, isNotEmpty);
       expect(snapshot.total, 7.90);
       expect(repositorio.llamadas, 1);
       await desmontar(tester);

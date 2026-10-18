@@ -202,7 +202,8 @@ Se reutiliza la estructura visual del login en registro.
 Saldo, recargas, pedidos, transacciones y puntos siguen siendo demostraciones
 locales. Se etiquetan como tales y se limpian al autenticar, cerrar o caducar una
 sesión; no están vinculados a PostgreSQL. Las confirmaciones de otra cuenta quedan
-bloqueadas. El carrito y sus cantidades se conservan en todos esos casos.
+bloqueadas. La integración persistente descrita abajo conserva el carrito en el
+servidor y retira de la pantalla sus datos privados cuando termina la sesión.
 
 ### Ejecución conectada a Railway
 
@@ -264,3 +265,10 @@ aprobadas y 195 aprobadas en la suite completa. Persiste únicamente el fallo de
 `home_alignment_test.dart` por el overflow de 6 px, sin modificar esa prueba.
 `git diff --check` no detecta errores de espacios. Las compilaciones Web release
 y APK debug finalizaron correctamente; no se hicieron commits, push ni despliegues.
+
+## Carrito persistente en Laravel
+
+La integración actual conserva el carrito de cada cuenta en PostgreSQL y utiliza
+UUID, versiones y fusiones idempotentes. El pago continúa como simulación local
+y nunca elimina productos persistentes. Contrato, archivos, pruebas, límites y
+comandos de ejecución en [docs/CARRITO_PERSISTENTE.md](docs/CARRITO_PERSISTENTE.md).

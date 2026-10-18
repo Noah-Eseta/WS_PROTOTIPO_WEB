@@ -401,9 +401,6 @@ class _CabeceraTiendaState extends ConsumerState<CabeceraTienda> {
               ),
               Builder(
                 builder: (context) {
-                  if (!ref.read(authProvider).iniciada) {
-                    return const SizedBox.shrink();
-                  }
                   return Consumer(
                     builder: (context, ref, _) {
                       final cantidad = ref.watch(

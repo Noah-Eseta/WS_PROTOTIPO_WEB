@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/http/error_autenticacion.dart';
+import '../core/http/error_carrito.dart';
 import '../models/estado_autenticacion.dart';
 import '../models/dto/autenticacion_api_dto.dart';
 import '../repositories/auth_repository.dart';
@@ -191,6 +192,30 @@ class AuthNotifier extends Notifier<EstadoAutenticacion> {
     }
     if (ref.mounted && generacion == _generacion) {
       state = EstadoAutenticacion(error: aviso);
+    }
+  }
+
+  /// La credencial solo se presta durante una petición HTTPS; no se publica.
+  Future<T> conToken<T>(Future<T> Function(String token) solicitar) async {
+    if (!verificarVigencia()) {
+      throw ErrorAutenticacion('Inicia sesión nuevamente.', estadoHttp: 401);
+    }
+    final token = _token!;
+    final generacion = _generacion;
+    try {
+      final resultado = await solicitar(token);
+      if (!ref.mounted || generacion != _generacion || token != _token) {
+        throw ErrorAutenticacion('La sesión cambió.', estadoHttp: 401);
+      }
+      return resultado;
+    } catch (error) {
+      if (ref.mounted &&
+          generacion == _generacion &&
+          error is ErrorCarrito &&
+          error.estadoHttp == 401) {
+        _limpiar(caducada: true);
+      }
+      rethrow;
     }
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/app_theme.dart';
-import '../core/acceso_compra.dart';
 import '../core/busqueda_producto.dart';
 import '../core/http/error_api.dart';
 import '../models/categoria.dart';
@@ -237,13 +236,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _aviso('${producto.nombre} no está disponible por ahora');
       return;
     }
-    if (!await solicitarSesionParaComprar(context) || !mounted) return;
     final detalle = detalleParaProducto(producto);
     if (detalle != null) {
       Navigator.of(context).push(RutaConCarga(destino: detalle));
       return;
     }
-    ref.read(carritoProvider.notifier).agregar(producto);
+    final ok = await ref.read(carritoProvider.notifier).agregar(producto);
+    if (!mounted) return;
+    if (!ok) {
+      _aviso(
+        ref.read(carritoProvider).error?.mensaje ??
+            'No se pudo agregar el producto.',
+      );
+      return;
+    }
     _aviso('${producto.nombre} añadido al carrito');
   }
 }
